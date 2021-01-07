@@ -186,6 +186,8 @@ public class PlayerFragment extends Fragment {
                     break;
             }
             main.SavePreferences();
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+            buttonRepeat.startAnimation(animationOutIn);
         });
 
         seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -208,6 +210,7 @@ public class PlayerFragment extends Fragment {
 
     private void changeMusic(){
         boolean isPlaying = PlayerService.isPlaying();
+        if(currentList.size()==0)return;
         JsonObject jsonObject = currentList.get(currentPositionOnList).getAsJsonObject();
         PlayerService.setMusic(jsonObject);
         setMusicInformation();
@@ -302,6 +305,7 @@ public class PlayerFragment extends Fragment {
 
     private void loadCurrentList(){
         dataBaseCurrentList = new DataBaseCurrentList(main);
+        dataBaseCurrentList.createTable();
         Cursor cursor = dataBaseCurrentList.getData();
 
         currentList = new JsonArray();
