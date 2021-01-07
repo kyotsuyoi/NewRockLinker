@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">My Rock Linker</string>
+    <string name="title_home">Home</string>
+    <string name="title_player">Player</string>
+    <string name="title_list">Lista</string>
+    <string name="todo">TODO</string>
+    <string name="app_version">App version</string>
+    <string name="artist">Artist</string>
+    <string name="quantity">Quantity</string>
+    <string name="title">title</string>
+    <string name="ok">OK</string>
+    <string name="description">description</string>
+    <string name="rocklinker">Rock Linker</string>
+    <string name="my">My</string>
+</resources>
