@@ -1,6 +1,7 @@
 package com.rocklinker.Services;
 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,12 +13,15 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.rocklinker.DAO.DataBaseCurrentList;
+import com.rocklinker.MainActivity;
 import com.rocklinker.R;
+import com.rocklinker.UI.Player.PlayerFragment;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,6 +31,9 @@ public class PlayerService extends Service {
     private static JsonObject fileInformation;
     private final Handler myHandler = new Handler();
     private static String repeat = "N";
+    private static boolean shuffle = false;
+    private static boolean updatePlayerFragment = false;
+    private static boolean created = false;
 
     @Nullable
     @Override
@@ -38,6 +45,7 @@ public class PlayerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        created=true;
         myHandler.postDelayed(UpdateSongTime, 100);
     }
 
@@ -133,6 +141,26 @@ public class PlayerService extends Service {
         return PlayerService.repeat;
     }
 
+    public static void setShuffle(boolean shuffle){
+        PlayerService.shuffle = shuffle;
+    }
+
+    public static boolean isShuffle(){
+        return shuffle;
+    }
+
+    public static boolean isUpdatePlayerFragment(){
+        if(updatePlayerFragment){
+            updatePlayerFragment = false;
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isCreated(){
+        return created;
+    }
+
     private final Runnable UpdateSongTime = new Runnable() {
 
         DataBaseCurrentList dataBaseCurrentList;
@@ -190,9 +218,11 @@ public class PlayerService extends Service {
                                 currentPositionOnList++;
                             }
 
-                            //fileInformation = currentList.get(currentPositionOnList).getAsJsonObject();
                             PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
                             PlayerService.play();
+
+                            PlayerService.updatePlayerFragment = true;
+
                         }
                         break;
                 }

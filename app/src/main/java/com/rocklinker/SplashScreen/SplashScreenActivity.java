@@ -36,7 +36,7 @@ public class SplashScreenActivity extends AppCompatActivity {
         cardView.startAnimation(animationFadeIn);
 
         Handler handle = new Handler();
-        handle.postDelayed(this::openMain, 0);
+        handle.postDelayed(this::openMain, 3000);
     }
 
     private void openMain(){

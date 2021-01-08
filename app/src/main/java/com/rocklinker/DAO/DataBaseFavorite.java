@@ -5,16 +5,15 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
+import android.widget.Toast;
 
-public class DataBaseCurrentList extends SQLiteOpenHelper {
+public class DataBaseFavorite extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "rocklinker.db";
-    public static final String TABLE_NAME = "current_playlist";
+    public static final String TABLE_NAME = "playlist";
+    private Context context;
 
-    public DataBaseCurrentList(Context context) {
-        super(context, DATABASE_NAME, null, 1);
-    }
+    public DataBaseFavorite(Context context) {super(context, DATABASE_NAME, null, 1);}
 
     @Override
     public void onCreate(SQLiteDatabase db) {}
@@ -55,9 +54,39 @@ public class DataBaseCurrentList extends SQLiteOpenHelper {
         }
     }
 
+    public boolean delete(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String where = "id = ?";
+        String[] whereArgs = new String[]{String.valueOf(id)};
+        try {
+            db.delete(TABLE_NAME, where, whereArgs);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
     public Cursor getData(){
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor res = db.rawQuery("SELECT * FROM "+TABLE_NAME+" ORDER BY id DESC", null);
         return res;
     }
+
+    public Cursor getDataFromID(int id){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res = db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE id = " + id, null);
+        return res;
+    }
+
+    public int getID(String filename){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE file_name = '" + filename + "'", null);
+
+        if(cursor.getCount() == 0) return 0;
+
+        cursor.moveToFirst();
+        int ID = cursor.getInt(0);
+        return ID;
+    }
+
 }

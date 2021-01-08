@@ -1,6 +1,10 @@
 package com.rocklinker.UI.Player;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Environment;
@@ -13,7 +17,9 @@ import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.res.ResourcesCompat;
@@ -25,14 +31,18 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.rocklinker.Common.ApiClient;
 import com.rocklinker.Common.PlayerInterface;
+import com.rocklinker.DAO.DataBase;
 import com.rocklinker.DAO.DataBaseCurrentList;
+import com.rocklinker.DAO.DataBaseFavorite;
 import com.rocklinker.MainActivity;
 import com.rocklinker.R;
 import com.rocklinker.Services.PlayerService;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
@@ -48,7 +58,7 @@ public class PlayerFragment extends Fragment {
     private final PlayerInterface playerInterface = ApiClient.getApiClient().create(PlayerInterface.class);
 
     private Button buttonPlay, buttonPrevious, buttonNext;
-    private Button buttonRepeat;
+    private Button buttonRepeat, buttonShuffle, buttonFavorite;
     private TextView textViewArtist, textViewTitle;
     private TextView textViewCurrentTime, textViewDuration;
     private SeekBar seekbar;
@@ -62,9 +72,13 @@ public class PlayerFragment extends Fragment {
     private Animation animationOutIn;
 
     private DataBaseCurrentList dataBaseCurrentList;
+    private DataBaseFavorite dataBaseFavorite;
     private JsonArray currentList;
 
     private int currentPositionOnList = -1;
+
+    private boolean isTrackingTouch = false;
+    private int currentProgressTouch = 0;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
@@ -85,6 +99,39 @@ public class PlayerFragment extends Fragment {
         buttonNext = root.findViewById(R.id.fragmentPlayer_Button_Next);
 
         buttonRepeat =  root.findViewById(R.id.fragmentPlayer_Button_Repeat);
+        buttonShuffle =  root.findViewById(R.id.fragmentPlayer_Button_Shuffle);
+        buttonFavorite =  root.findViewById(R.id.fragmentPlayer_Button_Favorite);
+
+        if(PlayerService.isPlaying()){
+            buttonPlay.setBackground(ResourcesCompat.getDrawable(
+                    getResources(),
+                    R.drawable.ic_pause_24,
+                    getActivity().getTheme()
+            ));
+        }
+
+        dataBaseFavorite = new DataBaseFavorite(main);
+        dataBaseFavorite.createTable();
+
+        setMusicInformation();
+        loadCurrentList();
+        setCurrentPositionOnList();
+        setButtons();
+
+        myHandler.postDelayed(UpdateSongTime, 100);
+
+        //main.registerReceiver(broadcastReceiver, new IntentFilter("broadcastAction"));
+
+        return root;
+    }
+
+    @Override
+    public void onDestroy() {
+        //main.unregisterReceiver(broadcastReceiver);
+        super.onDestroy();
+    }
+
+    private void setButtons(){
 
         switch (PlayerService.getRepeat()){
             case "N":
@@ -101,25 +148,17 @@ public class PlayerFragment extends Fragment {
                 break;
         }
 
-        if(PlayerService.isPlaying()){
-            buttonPlay.setBackground(ResourcesCompat.getDrawable(
-                    getResources(),
-                    R.drawable.ic_pause_24,
-                    getActivity().getTheme()
-            ));
+        if(PlayerService.isShuffle()){
+            buttonShuffle.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_transform_24, main.getTheme()));
+            buttonShuffle.setAlpha(1f);
+            shuffleList();
+        }else{
+            //buttonShuffle.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_no_transform, getTheme()));
+            buttonShuffle.setAlpha(0.5f);
         }
 
-        setButtons();
-        setMusicInformation();
-        loadCurrentList();
-        setCurrentPositionOnList();
+        setFavorite();
 
-        myHandler.postDelayed(UpdateSongTime, 100);
-
-        return root;
-    }
-
-    private void setButtons(){
         buttonPlay.setOnClickListener(v->{
             boolean isPlaying = PlayerService.play();
             if(!isPlaying){
@@ -155,6 +194,11 @@ public class PlayerFragment extends Fragment {
         });
 
         buttonPrevious.setOnClickListener(v -> {
+            if(PlayerService.getCurrentTime()>5000){
+                PlayerService.setSeekTo(0);
+                return;
+            }
+
             if(currentPositionOnList == 0){
                 currentPositionOnList = currentList.size()-1;
             }else{
@@ -173,39 +217,96 @@ public class PlayerFragment extends Fragment {
                     PlayerService.setRepeat("A");
                     buttonRepeat.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_repeat_24, main.getTheme()));
                     buttonRepeat.setAlpha(1f);
+
+                    animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.rotate);
+                    buttonRepeat.startAnimation(animationOutIn);
                     break;
                 case "A":
                     PlayerService.setRepeat("N");
                     //buttonRepeat.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_no_repeat, getTheme()));
                     buttonRepeat.setAlpha(0.5f);
+
+                    animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+                    buttonRepeat.startAnimation(animationOutIn);
                     break;
                 case "N":
                     PlayerService.setRepeat("1");
                     buttonRepeat.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_repeat_one_24, main.getTheme()));
                     buttonRepeat.setAlpha(1f);
+
+                    animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+                    buttonRepeat.startAnimation(animationOutIn);
                     break;
             }
             main.SavePreferences();
+        });
+
+        buttonShuffle.setOnClickListener(v -> {
+
             animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
-            buttonRepeat.startAnimation(animationOutIn);
+            buttonShuffle.startAnimation(animationOutIn);
+
+            if(PlayerService.isShuffle()){
+                PlayerService.setShuffle(false);
+                buttonShuffle.setAlpha(0.5f);
+                return;
+            }
+            PlayerService.setShuffle(true);
+            buttonShuffle.setAlpha(1f);
+            shuffleList();
+        });
+
+        buttonFavorite.setOnClickListener(v -> {
+
+            JsonObject jsonObject = PlayerService.getFileInformation();
+            String URI = jsonObject.get("uri").getAsString();
+            String filename = jsonObject.get("filename").getAsString();
+            String artist = jsonObject.get("artist").getAsString();
+            String title = jsonObject.get("title").getAsString();
+
+            int ID = dataBaseFavorite.getID(filename);
+            if(ID != 0){
+                dataBaseFavorite.delete(ID);
+                //Toast.makeText(getContext(),"Removida das favoritas!",Toast.LENGTH_LONG).show();
+                buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_border_24, main.getTheme()));
+
+                animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+                buttonFavorite.startAnimation(animationOutIn);
+                return;
+            }
+
+            dataBaseFavorite.insert(URI,filename,artist,title);
+            //Toast.makeText(getContext(),"Salva nas favoritas!",Toast.LENGTH_LONG).show();
+            buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_24, main.getTheme()));
+
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.heart_beat);
+            buttonFavorite.startAnimation(animationOutIn);
         });
 
         seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                currentTime = progress;
+                currentProgressTouch = progress;
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
+                isTrackingTouch=true;
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                PlayerService.setSeekTo(currentTime);
+                isTrackingTouch=false;
+                PlayerService.setSeekTo(currentProgressTouch);
+                currentProgressTouch=0;
             }
         });
+    }
+
+    @Override
+    public void onPause() {
+        myHandler.removeCallbacks(UpdateSongTime);
+        super.onPause();
     }
 
     private void changeMusic(){
@@ -219,6 +320,7 @@ public class PlayerFragment extends Fragment {
             PlayerService.play();
         }
 
+        setFavorite();
         main.SavePreferences();
     }
 
@@ -309,7 +411,7 @@ public class PlayerFragment extends Fragment {
         Cursor cursor = dataBaseCurrentList.getData();
 
         currentList = new JsonArray();
-        if(cursor!=null ) {
+        if(cursor!=null) {
             cursor.moveToFirst();
             while (!cursor.isAfterLast()) {
                 JsonObject jsonObject = new JsonObject();
@@ -334,11 +436,61 @@ public class PlayerFragment extends Fragment {
         }
     }
 
+    private void setFavorite(){
+        int fID = dataBaseFavorite.getID(PlayerService.getFileInformation().get("filename").getAsString());
+        if(fID == 0){
+            buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_border_24, main.getTheme()));
+        }else{
+            buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_24, main.getTheme()));
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.heart_beat);
+            buttonFavorite.startAnimation(animationOutIn);
+        }
+    }
+
+    private void shuffleList (){
+        try {
+            Random random = new Random();
+
+            JsonArray oldArray = currentList;
+            JsonArray newArray = new JsonArray();
+
+            for (int i = oldArray.size(); i > 0; i--) {
+                int randomPosition = random.nextInt(oldArray.size());
+
+                JsonElement element = oldArray.get(randomPosition);
+                oldArray.remove(randomPosition);
+                newArray.add(element);
+            }
+
+            currentList = newArray;
+
+            dataBaseCurrentList.dropTable();
+            dataBaseCurrentList.createTable();
+
+            for(JsonElement jsonElement : currentList){
+                String URI = jsonElement.getAsJsonObject().get("uri").getAsString();
+                String fileName = jsonElement.getAsJsonObject().get("filename").getAsString();
+                String artist = jsonElement.getAsJsonObject().get("artist").getAsString();
+                String title = jsonElement.getAsJsonObject().get("title").getAsString();
+                dataBaseCurrentList.insert(URI,fileName,artist,title);
+            }
+
+            setCurrentPositionOnList();
+
+        }catch (Exception e){
+            Handler.ShowSnack("Houve um erro","PlayerFragment.shuffleList: " + e.getMessage(), main, R_ID);
+        }
+    }
+
     private final Runnable UpdateSongTime = new Runnable() {
 
         @SuppressLint("DefaultLocale")
         public void run() {
             if(PlayerService.getFileName() != null) {
+
+                if(PlayerService.isUpdatePlayerFragment()){
+                    setMusicInformation();
+                }
 
                 currentTime = PlayerService.getCurrentTime();
                 duration = PlayerService.getDuration();
@@ -360,7 +512,9 @@ public class PlayerFragment extends Fragment {
                 textViewDuration.setText(String.format("%s:%s", Minutes, Seconds));
 
                 seekbar.setMax((int) duration);
-                seekbar.setProgress((int) currentTime);
+                if(!isTrackingTouch) {
+                    seekbar.setProgress((int) currentTime);
+                }
 
                 if (!PlayerService.isPlaying()) {
                     buttonPlay.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_play_arrow_24, main.getTheme()));
@@ -370,4 +524,5 @@ public class PlayerFragment extends Fragment {
             myHandler.postDelayed(this, 100);
         }
     };
+
 }

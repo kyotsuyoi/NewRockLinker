@@ -25,6 +25,8 @@
             </intent-filter>
         </activity>
 
+        <receiver android:name=".Services.BroadcastService"/>
+
         <service android:name=".Services.PlayerService"/>
     </application>
 
