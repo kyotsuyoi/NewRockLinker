@@ -124,6 +124,63 @@ public class ListFragment extends Fragment {
         return root;
     }
 
+    private void setRecyclerView(){
+        try {
+            recyclerView.addOnItemTouchListener(new RecyclerItemClickListener(
+                    main.getBaseContext(), recyclerView, new RecyclerItemClickListener.OnItemClickListener() {
+                @Override
+                public void onItemClick(View view, int position) {
+                    try {
+                        JsonObject jsonObject;
+                        switch (listType){
+                            case 3:
+                                if(externalMusicListAdapter == null) return;
+                                jsonObject = externalMusicListAdapter.getItem(position);
+                                jsonObject.addProperty("uri",URI);
+                                PlayerService.setMusic(jsonObject);
+                                PlayerService.play();
+                                main.SavePreferences();
+
+                                dataBaseCurrentList.dropTable();
+                                dataBaseCurrentList.createTable();
+                                insertCurrentList(URI, externalMusicListAdapter.getItems());
+
+                                externalMusicListAdapter.notifyDataSetChanged();
+                                break;
+                            case 4:
+                                listType = 3;
+                                if (externalArtistListAdapter == null) return;
+                                getExternalMusicList(externalArtistListAdapter.getArtistName(position));
+                                break;
+                            case 5:
+                                if (currentMusicListAdapter == null) return;
+                                jsonObject = currentMusicListAdapter.getItem(position);
+                                PlayerService.setMusic(jsonObject);
+                                PlayerService.play();
+                                main.SavePreferences();
+
+                                dataBaseCurrentList.dropTable();
+                                dataBaseCurrentList.createTable();
+                                insertCurrentList(URI, currentMusicListAdapter.getItems());
+
+                                currentMusicListAdapter.notifyDataSetChanged();
+                                break;
+                        }
+                    }catch (Exception e){
+                        Handler.ShowSnack("Houve um erro","ListFragment.setRecyclerView.onItemClick: " + e.getMessage(), main, R_ID);
+                    }
+                }
+
+                @Override
+                public boolean onLongItemClick(View view, int position) {
+                    return true;
+                }
+            }));
+        }catch (Exception e){
+            Handler.ShowSnack("Houve um erro","ListFragment.setRecyclerView: " + e.getMessage(), main, R_ID);
+        }
+    }
+
     private void getInternalMusicList(){
         try {
             File dir = new File(path);
@@ -249,66 +306,17 @@ public class ListFragment extends Fragment {
 
     }
 
-    private void setRecyclerView(){
+    private void insertCurrentList(String URI, JsonArray jsonArray){
+
         try {
-            recyclerView.addOnItemTouchListener(new RecyclerItemClickListener(
-                    main.getBaseContext(), recyclerView, new RecyclerItemClickListener.OnItemClickListener() {
-                @Override
-                public void onItemClick(View view, int position) {
-                    try {
-                        JsonObject jsonObject;
-                        switch (listType){
-                            case 3:
-                                if(externalMusicListAdapter == null) return;
-                                jsonObject = externalMusicListAdapter.getItem(position);
-                                jsonObject.addProperty("uri",URI);
-                                PlayerService.setMusic(jsonObject);
-                                PlayerService.play();
-                                main.SavePreferences();
-
-                                dataBaseCurrentList.dropTable();
-                                dataBaseCurrentList.createTable();
-                                insertCurrentList(URI);
-
-                                externalMusicListAdapter.notifyDataSetChanged();
-                                break;
-                            case 4:
-                                listType = 3;
-                                if (externalArtistListAdapter == null) return;
-                                getExternalMusicList(externalArtistListAdapter.getArtistName(position));
-                                break;
-                            case 5:
-                                if (currentMusicListAdapter == null) return;
-                                jsonObject = currentMusicListAdapter.getItem(position);
-                                PlayerService.setMusic(jsonObject);
-                                PlayerService.play();
-                                main.SavePreferences();
-
-                                currentMusicListAdapter.notifyDataSetChanged();
-                                break;
-                        }
-                    }catch (Exception e){
-                        Handler.ShowSnack("Houve um erro","ListFragment.setRecyclerView.onItemClick: " + e.getMessage(), main, R_ID);
-                    }
-                }
-
-                @Override
-                public boolean onLongItemClick(View view, int position) {
-                    return true;
-                }
-            }));
+            for (JsonElement jsonElement : jsonArray) {
+                String fileName = jsonElement.getAsJsonObject().get("filename").getAsString();
+                String artist = jsonElement.getAsJsonObject().get("artist").getAsString();
+                String title = jsonElement.getAsJsonObject().get("title").getAsString();
+                dataBaseCurrentList.insert(URI, fileName, artist, title);
+            }
         }catch (Exception e){
-            Handler.ShowSnack("Houve um erro","ListFragment.setRecyclerView: " + e.getMessage(), main, R_ID);
-        }
-    }
-
-    private void insertCurrentList(String URI){
-
-        for(JsonElement jsonElement : externalMusicListAdapter.getItems()){
-            String fileName = jsonElement.getAsJsonObject().get("filename").getAsString();
-            String artist = jsonElement.getAsJsonObject().get("artist").getAsString();
-            String title = jsonElement.getAsJsonObject().get("title").getAsString();
-            dataBaseCurrentList.insert(URI,fileName,artist,title);
+            Handler.ShowSnack("Houve um erro","ListFragment.insertCurrentList: " + e.getMessage(), main, R_ID);
         }
     }
 

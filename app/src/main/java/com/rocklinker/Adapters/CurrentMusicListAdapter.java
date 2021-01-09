@@ -121,6 +121,10 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
         return filteredJsonArray.get(position).getAsJsonObject();
     }
 
+    public JsonArray getItems(){
+        return jsonArray;
+    }
+
     private void GetMusicInfo(JsonObject jsonObject, ImageView imageViewArt, TextView textViewArtistName, TextView textViewMusicName){
 
         String fileName = jsonObject.get("filename").getAsString();
@@ -157,7 +161,6 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             textViewMusicName.setText(unknown);
         }
     }
-
 
     private void getMusicArt(ImageView imageView, String filename){
         try {

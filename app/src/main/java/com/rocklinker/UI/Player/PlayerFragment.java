@@ -259,6 +259,9 @@ public class PlayerFragment extends Fragment {
         buttonFavorite.setOnClickListener(v -> {
 
             JsonObject jsonObject = PlayerService.getFileInformation();
+
+            if(PlayerService.getFileInformation()==null)return;
+
             String URI = jsonObject.get("uri").getAsString();
             String filename = jsonObject.get("filename").getAsString();
             String artist = jsonObject.get("artist").getAsString();
@@ -286,6 +289,10 @@ public class PlayerFragment extends Fragment {
         seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if(PlayerService.getFileInformation()==null){
+                    seekBar.setProgress(0);
+                    return;
+                }
                 currentProgressTouch = progress;
             }
 
@@ -437,6 +444,7 @@ public class PlayerFragment extends Fragment {
     }
 
     private void setFavorite(){
+        if(PlayerService.getFileInformation() == null) return;
         int fID = dataBaseFavorite.getID(PlayerService.getFileInformation().get("filename").getAsString());
         if(fID == 0){
             buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_border_24, main.getTheme()));

@@ -10,6 +10,7 @@ import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
@@ -40,7 +41,9 @@ public class PlayerService extends Service {
     public IBinder onBind(Intent intent) {return null;}
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {return START_STICKY;}
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return (START_REDELIVER_INTENT);
+    }
 
     @Override
     public void onCreate() {
@@ -167,64 +170,72 @@ public class PlayerService extends Service {
 
         @SuppressLint("DefaultLocale")
         public void run() {
-            if(PlayerService.getFileName() != null) {
+            if(PlayerService.getFileName() != null && created) {
 
-                switch (repeat) {
-                    case "N":
-                        if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration()-1000) {
-                            mediaPlayer.seekTo(0);
-                            mediaPlayer.pause();
-                        }
-                        break;
-                    case "1":
-                        if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration()-1000) {
-                            mediaPlayer.seekTo(0);
-                        }
-                        break;
-                    case "A":
-                        if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration()-1000) {
+                try{
+                    switch (repeat) {
+                        case "N":
+                            if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
+                                mediaPlayer.seekTo(0);
+                                mediaPlayer.pause();
+                            }
+                            break;
+                        case "1":
+                            if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
+                                mediaPlayer.seekTo(0);
+                            }
+                            break;
+                        case "A":
 
-                            dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
-                            Cursor cursor = dataBaseCurrentList.getData();
+                            if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
 
-                            JsonArray currentList = new JsonArray();
-                            if(cursor!=null ) {
-                                cursor.moveToFirst();
-                                while (!cursor.isAfterLast()) {
-                                    JsonObject jsonObject = new JsonObject();
-                                    jsonObject.addProperty("id", cursor.getString(0));
-                                    jsonObject.addProperty("uri", cursor.getString(1));
-                                    jsonObject.addProperty("filename", cursor.getString(2));
-                                    jsonObject.addProperty("artist", cursor.getString(3));
-                                    jsonObject.addProperty("title", cursor.getString(4));
+                                dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
+                                Cursor cursor = dataBaseCurrentList.getData();
 
-                                    currentList.add(jsonObject);
-                                    cursor.moveToNext();
+                                JsonArray currentList = new JsonArray();
+                                if (cursor != null) {
+                                    cursor.moveToFirst();
+                                    while (!cursor.isAfterLast()) {
+                                        JsonObject jsonObject = new JsonObject();
+                                        jsonObject.addProperty("id", cursor.getString(0));
+                                        jsonObject.addProperty("uri", cursor.getString(1));
+                                        jsonObject.addProperty("filename", cursor.getString(2));
+                                        jsonObject.addProperty("artist", cursor.getString(3));
+                                        jsonObject.addProperty("title", cursor.getString(4));
+
+                                        currentList.add(jsonObject);
+                                        cursor.moveToNext();
+                                    }
                                 }
-                            }
 
-                            int currentPositionOnList = 0;
+                                int currentPositionOnList = 0;
 
-                            for (int i = 0; i < currentList.size(); i++) {
-                                String fileName = currentList.get(i).getAsJsonObject().get("filename").getAsString();
-                                if(fileName.equals(PlayerService.getFileName())){
-                                    currentPositionOnList = i;
+                                for (int i = 0; i < currentList.size(); i++) {
+                                    String fileName = currentList.get(i).getAsJsonObject().get("filename").getAsString();
+                                    if (fileName.equals(PlayerService.getFileName())) {
+                                        currentPositionOnList = i;
+                                    }
                                 }
+
+                                if (currentPositionOnList >= currentList.size() - 1) {
+                                    currentPositionOnList = 0;
+                                } else {
+                                    currentPositionOnList++;
+                                }
+
+                                PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
+                                PlayerService.play();
+
+                                PlayerService.updatePlayerFragment = true;
+
                             }
+                            break;
+                    }
 
-                            if(currentPositionOnList >= currentList.size()-1){
-                                currentPositionOnList = 0;
-                            }else{
-                                currentPositionOnList++;
-                            }
-
-                            PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
-                            PlayerService.play();
-
-                            PlayerService.updatePlayerFragment = true;
-
-                        }
-                        break;
+                }catch (Exception e){
+                    //Existe um erro em
+                    //if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
+                    //por algum motivo em alguns momentos não consegue ler o estado do mediaPlayer
                 }
             }
 

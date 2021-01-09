@@ -46,7 +46,8 @@ public class MainActivity extends AppCompatActivity {
             NavigationUI.setupWithNavController(navView, navController);
 
             if(!PlayerService.isCreated()){
-                startService(new Intent(MainActivity.this, PlayerService.class));
+                //startService(new Intent(MainActivity.this, PlayerService.class));
+                startForegroundService(new Intent(MainActivity.this, PlayerService.class));
                 LoadPreferences();
             }
 
@@ -61,7 +62,9 @@ public class MainActivity extends AppCompatActivity {
 
         editor.putBoolean("shuffle", PlayerService.isShuffle());
         editor.putString("repeat", PlayerService.getRepeat());
-        editor.putString("fileInformation", PlayerService.getFileInformation().toString());
+        if(PlayerService.getFileInformation()!=null){
+            editor.putString("fileInformation", PlayerService.getFileInformation().toString());
+        }
         editor.apply();
     }
 
