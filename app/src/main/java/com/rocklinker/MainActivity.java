@@ -55,11 +55,11 @@ public class MainActivity extends AppCompatActivity {
 
             if(!PlayerService.isCreated()){
                 final Context context = this.getApplicationContext();
-                startService(new Intent(context, PlayerService.class));
+                //startForegroundService(new Intent(context, PlayerService.class));
                 //stopService(new Intent(context, PlayerService.class));
                 LoadPreferences();
 
-                /*final Context applicationContext = this.getApplicationContext();
+                final Context applicationContext = this.getApplicationContext();
                 Intent intent = new Intent(this, PlayerService.class);
 
                 applicationContext.bindService(intent, new ServiceConnection() {
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onServiceDisconnected(ComponentName name) {
                     }
-                }, Context.BIND_AUTO_CREATE);*/
+                }, Context.BIND_AUTO_CREATE);
             }
 
         }catch (Exception e){

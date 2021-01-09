@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -125,6 +126,9 @@ public class ListFragment extends Fragment {
             dataBaseCurrentList = new DataBaseCurrentList(main);
             dataBaseCurrentList.createTable();
             loadCurrentList(false);
+
+            dataBaseFavorite = new DataBaseFavorite(main);
+            dataBaseFavorite.createTable();
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","ListFragment.onCreateView: " + e.getMessage(), main, R_ID);
         }
@@ -289,8 +293,6 @@ public class ListFragment extends Fragment {
     private void loadCurrentList(boolean isFavorite){
         Cursor cursor;
         if(isFavorite){
-            dataBaseFavorite = new DataBaseFavorite(main);
-            dataBaseFavorite.createTable();
             cursor = dataBaseFavorite.getData();
         }else {
             dataBaseCurrentList = new DataBaseCurrentList(main);
@@ -380,8 +382,42 @@ public class ListFragment extends Fragment {
                 });
             }
 
+            int fID = dataBaseFavorite.getID(jsonObject.get("filename").getAsString());
+            if(fID == 0){
+                buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_border_24, main.getTheme()));
+            }else{
+                buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_24, main.getTheme()));
+                animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.heart_beat);
+                buttonFavorite.startAnimation(animationOutIn);
+            }
+
             buttonFavorite.setOnClickListener(v -> {
 
+                //Precisa guardar a URI
+                //String URI = jsonObject.get("uri").getAsString();
+                String URI = ApiClient.BASE_URL+"songs/";
+
+                String filename = jsonObject.get("filename").getAsString();
+                String artist = jsonObject.get("artist").getAsString();
+                String title = jsonObject.get("title").getAsString();
+
+                int ID = dataBaseFavorite.getID(filename);
+                if(ID != 0){
+                    dataBaseFavorite.delete(ID);
+                    //Toast.makeText(getContext(),"Removida das favoritas!",Toast.LENGTH_LONG).show();
+                    buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_border_24, main.getTheme()));
+
+                    animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+                    buttonFavorite.startAnimation(animationOutIn);
+                    return;
+                }
+
+                dataBaseFavorite.insert(URI,filename,artist,title);
+                //Toast.makeText(getContext(),"Salva nas favoritas!",Toast.LENGTH_LONG).show();
+                buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_24, main.getTheme()));
+
+                animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.heart_beat);
+                buttonFavorite.startAnimation(animationOutIn);
             });
 
             buttonOK.setOnClickListener(v-> dialog.cancel());
