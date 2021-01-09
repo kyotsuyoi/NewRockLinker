@@ -1,14 +1,21 @@
 package com.rocklinker.UI.List;
 
+import android.app.Dialog;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -17,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.rocklinker.Adapters.CurrentMusicListAdapter;
 import com.rocklinker.Adapters.ExternalArtistListAdapter;
@@ -173,6 +181,16 @@ public class ListFragment extends Fragment {
 
                 @Override
                 public boolean onLongItemClick(View view, int position) {
+                    switch (listType){
+                        case 3:
+                            if(externalMusicListAdapter == null) return false;
+                            DialogMusicMenu(externalMusicListAdapter.getItem(position));
+                            break;
+                        case 5:
+                            if (currentMusicListAdapter == null) return false;
+                            DialogMusicMenu(currentMusicListAdapter.getItem(position));
+                            break;
+                    }
                     return true;
                 }
             }));
@@ -317,6 +335,62 @@ public class ListFragment extends Fragment {
             }
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","ListFragment.insertCurrentList: " + e.getMessage(), main, R_ID);
+        }
+    }
+
+    private void DialogMusicMenu(JsonObject jsonObject){
+        try {
+            Dialog dialog = new Dialog(main);
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.setContentView(R.layout.dialog_music_menu);
+
+            TextView textViewTitle = dialog.findViewById(R.id.dialogMusicMenu_TextView_Title);
+            TextView textViewArtist = dialog.findViewById(R.id.dialogMusicMenu_TextView_Artist);
+            TextView textViewYear = dialog.findViewById(R.id.dialogMusicMenu_TextView_Year);
+            ImageView imageView = dialog.findViewById(R.id.dialogMusicMenu_ImageView);
+            Button buttonOK = dialog.findViewById(R.id.dialogMusicMenu_Button_OK);
+            Button buttonFavorite = dialog.findViewById(R.id.dialogMusicMenu_Button_Favorite);
+            Button buttonDownload = dialog.findViewById(R.id.dialogMusicMenu_Button_Download);
+
+            textViewTitle.setText(jsonObject.get("title").getAsString());
+            textViewArtist.setText(jsonObject.get("artist").getAsString());
+
+            String year = "Ano desconhecido";
+            textViewYear.setText(year);
+            if(jsonObject.has("year") && jsonObject.get("year") != JsonNull.INSTANCE){
+                textViewYear.setText(jsonObject.get("year").getAsString());
+            }
+
+            if(jsonObject.has("art") && jsonObject.get("art") != JsonNull.INSTANCE) {
+                imageView.setImageBitmap(Handler.ImageDecode(jsonObject.get("art").getAsString()));
+            }
+
+            File file = new File(Objects.requireNonNull(main.getExternalFilesDir(Environment.DIRECTORY_MUSIC)).getAbsolutePath(), jsonObject.get("filename").getAsString());
+
+            if(file.exists()){
+                buttonDownload.setEnabled(false);
+                buttonDownload.setVisibility(View.INVISIBLE);
+            }else{
+                buttonDownload.setOnClickListener(v->{
+                    Handler.ShowSnack("Indisponível",null, main, R_ID);
+                    /*beginDownload(jsonObject.get("filename").getAsString());
+                    buttonDownload.setEnabled(false);
+                    buttonDownload.setVisibility(View.INVISIBLE);*/
+                });
+            }
+
+            buttonFavorite.setOnClickListener(v -> {
+
+            });
+
+            buttonOK.setOnClickListener(v-> dialog.cancel());
+
+            dialog.create();
+            dialog.show();
+
+        }catch (Exception e){
+            Handler.ShowSnack("Houve um erro","ListFragment.DialogMusicMenu: " + e.getMessage(), main, R_ID);
         }
     }
 

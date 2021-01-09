@@ -36,13 +36,18 @@ public class PlayerService extends Service {
     private static boolean updatePlayerFragment = false;
     private static boolean created = false;
 
+    private final MusicBinder musicBind = new MusicBinder();
+
     @Nullable
     @Override
-    public IBinder onBind(Intent intent) {return null;}
+    public IBinder onBind(Intent intent) {
+        musicBind.onBind(this);
+        return musicBind;
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return (START_REDELIVER_INTENT);
+        return (START_NOT_STICKY);
     }
 
     @Override

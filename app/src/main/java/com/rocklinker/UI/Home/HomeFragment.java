@@ -1,5 +1,6 @@
 package com.rocklinker.UI.Home;
 
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,6 +13,7 @@ import androidx.fragment.app.Fragment;
 
 import com.rocklinker.MainActivity;
 import com.rocklinker.R;
+import com.rocklinker.Services.PlayerService;
 
 public class HomeFragment extends Fragment {
 

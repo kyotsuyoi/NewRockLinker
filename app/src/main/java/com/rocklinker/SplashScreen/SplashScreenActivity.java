@@ -15,6 +15,7 @@ import androidx.cardview.widget.CardView;
 
 import com.rocklinker.MainActivity;
 import com.rocklinker.R;
+import com.rocklinker.Services.PlayerService;
 
 public class SplashScreenActivity extends AppCompatActivity {
 

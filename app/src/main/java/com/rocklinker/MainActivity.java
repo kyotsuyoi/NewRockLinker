@@ -1,20 +1,28 @@
 package com.rocklinker;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.os.Binder;
 import android.os.Bundle;
+import android.os.IBinder;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.rocklinker.Services.MusicBinder;
 import com.rocklinker.Services.PlayerService;
 
+import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import java.lang.ref.WeakReference;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -46,9 +54,29 @@ public class MainActivity extends AppCompatActivity {
             NavigationUI.setupWithNavController(navView, navController);
 
             if(!PlayerService.isCreated()){
-                //startService(new Intent(MainActivity.this, PlayerService.class));
-                startForegroundService(new Intent(MainActivity.this, PlayerService.class));
+                final Context context = this.getApplicationContext();
+                startService(new Intent(context, PlayerService.class));
+                //stopService(new Intent(context, PlayerService.class));
                 LoadPreferences();
+
+                /*final Context applicationContext = this.getApplicationContext();
+                Intent intent = new Intent(this, PlayerService.class);
+
+                applicationContext.bindService(intent, new ServiceConnection() {
+                    @Override
+                    public void onServiceConnected(ComponentName name, IBinder binder) {
+                        if (binder instanceof MusicBinder) {
+                            MusicBinder musicBinder = (MusicBinder) binder;
+                            PlayerService service = musicBinder.getService();
+                            service.onCreate();
+                        }
+                        applicationContext.unbindService(this);
+                    }
+
+                    @Override
+                    public void onServiceDisconnected(ComponentName name) {
+                    }
+                }, Context.BIND_AUTO_CREATE);*/
             }
 
         }catch (Exception e){
