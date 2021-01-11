@@ -116,9 +116,14 @@ public class PlayerFragment extends Fragment {
         setMusicInformation();
         loadCurrentList();
         setCurrentPositionOnList();
+
+        if(!PlayerService.isSetMusic()) {
+            PlayerService.setMusic(PlayerService.getFileInformation());
+        }
+
         setButtons();
 
-        myHandler.postDelayed(UpdateSongTime, 100);
+        //myHandler.postDelayed(UpdateSongTime, 100);
 
         //main.registerReceiver(broadcastReceiver, new IntentFilter("broadcastAction"));
 
@@ -129,6 +134,18 @@ public class PlayerFragment extends Fragment {
     public void onDestroy() {
         //main.unregisterReceiver(broadcastReceiver);
         super.onDestroy();
+    }
+
+    @Override
+    public void onResume() {
+        myHandler.postDelayed(UpdateSongTime, 100);
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        myHandler.removeCallbacks(UpdateSongTime);
+        super.onPause();
     }
 
     private void setButtons(){
@@ -310,12 +327,6 @@ public class PlayerFragment extends Fragment {
         });
     }
 
-    @Override
-    public void onPause() {
-        myHandler.removeCallbacks(UpdateSongTime);
-        super.onPause();
-    }
-
     private void changeMusic(){
         boolean isPlaying = PlayerService.isPlaying();
         if(currentList.size()==0)return;
@@ -356,6 +367,13 @@ public class PlayerFragment extends Fragment {
 
     private void getExternalMusicArt(String filename){
         try {
+
+            if(PlayerService.getFileInformation().has("art")
+                    && PlayerService.getFileInformation().get("art") != JsonNull.INSTANCE){
+                imageViewArt.setImageBitmap(Handler.ImageDecode(PlayerService.getFileInformation().get("art").getAsString()));
+                return;
+            }
+
             Call<JsonObject> call = playerInterface.GetFullMusicArt(filename,true);
             call.enqueue(new Callback<JsonObject>() {
                 @Override
@@ -368,6 +386,7 @@ public class PlayerFragment extends Fragment {
 
                             imageViewArt.setImageBitmap(Handler.ImageDecode(jsonArray.get(0).getAsJsonObject().get("art").getAsString()));
                             musicInformation.addProperty("art", jsonArray.get(0).getAsJsonObject().get("art").getAsString());
+                            PlayerService.setFileInformationArt(jsonArray.get(0).getAsJsonObject().get("art").getAsString());
                             //PlayerNotification.createNotification(main);
                         }else{
                             imageViewArt.setImageBitmap(null);
@@ -503,17 +522,17 @@ public class PlayerFragment extends Fragment {
                 currentTime = PlayerService.getCurrentTime();
                 duration = PlayerService.getDuration();
 
-                String Minutes = String.valueOf(TimeUnit.MILLISECONDS.toMinutes((long) currentTime));
-                String Seconds = String.valueOf(TimeUnit.MILLISECONDS.toSeconds((long) currentTime)
-                        - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes((long) currentTime)));
+                String Minutes = String.valueOf(TimeUnit.MILLISECONDS.toMinutes(currentTime));
+                String Seconds = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(currentTime)
+                        - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(currentTime)));
                 if (Seconds.length() < 2) {
                     Seconds = "0" + Seconds;
                 }
                 textViewCurrentTime.setText(String.format("%s:%s", Minutes, Seconds));
 
-                Minutes = String.valueOf(TimeUnit.MILLISECONDS.toMinutes((long) duration));
-                Seconds = String.valueOf(TimeUnit.MILLISECONDS.toSeconds((long) duration)
-                        - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes((long) duration)));
+                Minutes = String.valueOf(TimeUnit.MILLISECONDS.toMinutes(duration));
+                Seconds = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)
+                        - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration)));
                 if (Seconds.length() < 2) {
                     Seconds = "0" + Seconds;
                 }

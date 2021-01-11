@@ -7,11 +7,15 @@
     android:layout_height="match_parent"
     tools:context=".UI.List.ListFragment">
 
-    <LinearLayout
+    <androidx.cardview.widget.CardView
         android:id="@+id/linearLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        app:cardBackgroundColor="@color/black_up"
+        app:cardCornerRadius="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -19,22 +23,21 @@
         <SearchView
             android:id="@+id/fragmentList_SearchView"
             style="Widget.AppCompat.SearchView"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:tooltipText="Nome da tarefa"
             android:theme="@style/SearchViewStyle"
+            android:tooltipText="Nome da tarefa"
             tools:targetApi="o" />
 
-    </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/fragmentList_SwipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="52dp"
+        android:layout_marginTop="66dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="52dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

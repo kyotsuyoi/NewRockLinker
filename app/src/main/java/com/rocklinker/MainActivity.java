@@ -54,10 +54,9 @@ public class MainActivity extends AppCompatActivity {
             NavigationUI.setupWithNavController(navView, navController);
 
             if(!PlayerService.isCreated()){
-                final Context context = this.getApplicationContext();
+                //final Context context = this.getApplicationContext();
                 //startForegroundService(new Intent(context, PlayerService.class));
                 //stopService(new Intent(context, PlayerService.class));
-                LoadPreferences();
 
                 final Context applicationContext = this.getApplicationContext();
                 Intent intent = new Intent(this, PlayerService.class);
@@ -65,17 +64,18 @@ public class MainActivity extends AppCompatActivity {
                 applicationContext.bindService(intent, new ServiceConnection() {
                     @Override
                     public void onServiceConnected(ComponentName name, IBinder binder) {
-                        if (binder instanceof MusicBinder) {
+                        /*if (binder instanceof MusicBinder) {
                             MusicBinder musicBinder = (MusicBinder) binder;
                             PlayerService service = musicBinder.getService();
                             service.onCreate();
                         }
-                        applicationContext.unbindService(this);
+                        applicationContext.unbindService(this);*/
+
+                        LoadPreferences();
                     }
 
                     @Override
-                    public void onServiceDisconnected(ComponentName name) {
-                    }
+                    public void onServiceDisconnected(ComponentName name){}
                 }, Context.BIND_AUTO_CREATE);
             }
 
@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             if(jsonString.equals(""))return;
             JsonObject jsonObject = (JsonObject) parser.parse(jsonString);
 
-            PlayerService.setFileInformation(jsonObject);
+            PlayerService.setMusic(jsonObject);
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","MainActivity.LoadPreferences: " + e.getMessage(), this, R_ID);
         }

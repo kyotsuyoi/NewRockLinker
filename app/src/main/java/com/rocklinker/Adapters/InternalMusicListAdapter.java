@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Filter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -60,18 +61,18 @@ public class InternalMusicListAdapter extends RecyclerView.Adapter <InternalMusi
 
             String fileName = filteredFiles.get(position).getName();
             if (PlayerService.getFileName().equals(fileName)){
-                viewHolder.imageViewPlaying.setVisibility(View.VISIBLE);
+                viewHolder.buttonPlaying.setVisibility(View.VISIBLE);
                 if (!PlayerService.isPlaying()) {
-                    viewHolder.imageViewPlaying.setImageDrawable(ResourcesCompat.getDrawable(
+                    viewHolder.buttonPlaying.setBackground(ResourcesCompat.getDrawable(
                             activity.getResources(),R.drawable.ic_pause_24,activity.getTheme()));
                     viewHolder.gifImageView.setVisibility(View.INVISIBLE);
                 } else {
-                    viewHolder.imageViewPlaying.setImageDrawable(ResourcesCompat.getDrawable(
+                    viewHolder.buttonPlaying.setBackground(ResourcesCompat.getDrawable(
                             activity.getResources(),R.drawable.ic_play_arrow_24,activity.getTheme()));
                     viewHolder.gifImageView.setVisibility(View.VISIBLE);
                 }
             } else {
-                viewHolder.imageViewPlaying.setVisibility(View.INVISIBLE);
+                viewHolder.buttonPlaying.setVisibility(View.INVISIBLE);
                 viewHolder.gifImageView.setVisibility(View.INVISIBLE);
             }
 
@@ -90,7 +91,8 @@ public class InternalMusicListAdapter extends RecyclerView.Adapter <InternalMusi
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
 
-        ImageView imageViewArt, imageViewPlaying;
+        ImageView imageViewArt;
+        Button buttonPlaying;
         TextView textViewArtistName, textViewMusicName;
         GifImageView gifImageView;
 
@@ -99,7 +101,7 @@ public class InternalMusicListAdapter extends RecyclerView.Adapter <InternalMusi
             imageViewArt = itemView.findViewById(R.id.itemInternalMusicList_ImageView_Art);
             textViewArtistName = itemView.findViewById(R.id.itemInternalMusicList_TextView_ArtistName);
             textViewMusicName = itemView.findViewById(R.id.itemInternalMusicList_TextView_MusicName);
-            imageViewPlaying = itemView.findViewById(R.id.itemInternalMusicList_ImageView_Playing);
+            buttonPlaying = itemView.findViewById(R.id.itemInternalMusicList_Button_Playing);
             gifImageView = itemView.findViewById(R.id.itemInternalMusicList_ImageView_Gif);
         }
     }

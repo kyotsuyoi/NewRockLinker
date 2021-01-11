@@ -10,16 +10,24 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent">
 
-        <ImageView
-            android:id="@+id/dialogMusicMenu_ImageView"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
+        <androidx.cardview.widget.CardView
+            android:id="@+id/dialogMusicMenu_CardView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
+            app:cardCornerRadius="10dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_launcher"
-            android:contentDescription="@string/todo" />
+            app:layout_constraintTop_toTopOf="parent" >
+
+            <ImageView
+                android:id="@+id/dialogMusicMenu_ImageView"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:contentDescription="@string/todo"
+                app:srcCompat="@drawable/ic_launcher" />
+        </androidx.cardview.widget.CardView>
+
 
         <TextView
             android:id="@+id/dialogMusicMenu_TextView_Title"
@@ -29,8 +37,8 @@
             android:text="@string/todo"
             android:textColor="@color/colorText"
             android:textSize="16sp"
-            app:layout_constraintStart_toEndOf="@+id/dialogMusicMenu_ImageView"
-            app:layout_constraintTop_toTopOf="@+id/dialogMusicMenu_ImageView" />
+            app:layout_constraintStart_toEndOf="@+id/dialogMusicMenu_CardView"
+            app:layout_constraintTop_toTopOf="@+id/dialogMusicMenu_CardView" />
 
         <TextView
             android:id="@+id/dialogMusicMenu_TextView_Artist"
@@ -39,7 +47,7 @@
             android:layout_marginStart="16dp"
             android:text="@string/todo"
             android:textColor="@color/colorText"
-            app:layout_constraintStart_toEndOf="@+id/dialogMusicMenu_ImageView"
+            app:layout_constraintStart_toEndOf="@+id/dialogMusicMenu_CardView"
             app:layout_constraintTop_toBottomOf="@+id/dialogMusicMenu_TextView_Title" />
 
         <TextView
@@ -49,7 +57,7 @@
             android:layout_marginStart="16dp"
             android:text="@string/todo"
             android:textColor="@color/colorText"
-            app:layout_constraintStart_toEndOf="@+id/dialogMusicMenu_ImageView"
+            app:layout_constraintStart_toEndOf="@+id/dialogMusicMenu_CardView"
             app:layout_constraintTop_toBottomOf="@+id/dialogMusicMenu_TextView_Artist" />
 
         <Button
@@ -62,7 +70,7 @@
             android:background="@drawable/ic_arrow_circle_down_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/dialogMusicMenu_ImageView" />
+            app:layout_constraintTop_toBottomOf="@+id/dialogMusicMenu_CardView" />
 
         <Button
             android:id="@+id/dialogMusicMenu_Button_Favorite"

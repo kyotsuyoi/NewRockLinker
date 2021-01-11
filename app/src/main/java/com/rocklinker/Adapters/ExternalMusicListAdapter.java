@@ -6,6 +6,7 @@ import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Filter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -87,12 +88,12 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
             //>>>Refatorar<<<
             //Algoritimo que deve ser feito somente uma vez e
             //ir marcando as musicas encontradas
-            viewHolder.imageViewDownload.setVisibility(View.VISIBLE);
+            viewHolder.buttonViewDownload.setVisibility(View.VISIBLE);
             if(files!=null) {
                 for (int i = 0; i < files.size(); i++) {
                     String Name = files.get(i).getName();
                     if (Name.equalsIgnoreCase(filename)) {
-                        viewHolder.imageViewDownload.setVisibility(View.INVISIBLE);
+                        viewHolder.buttonViewDownload.setVisibility(View.INVISIBLE);
                         i = files.size();
                     }
                 }
@@ -121,7 +122,8 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
 
-        ImageView imageViewArt, imageViewDownload;
+        ImageView imageViewArt;
+        Button buttonViewDownload;
         TextView textViewArtistName, textViewMusicName;
         GifImageView gifImageView;
 
@@ -130,7 +132,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
             imageViewArt = itemView.findViewById(R.id.itemExternalMusicList_ImageView_Art);
             textViewArtistName = itemView.findViewById(R.id.itemExternalMusicList_TextView_ArtistName);
             textViewMusicName = itemView.findViewById(R.id.itemExternalMusicList_TextView_MusicName);
-            imageViewDownload = itemView.findViewById(R.id.itemExternalMusicList_ImageView_Download);
+            buttonViewDownload = itemView.findViewById(R.id.itemExternalMusicList_Button_Download);
             gifImageView = itemView.findViewById(R.id.itemExternalMusicList_ImageView_Gif);
         }
     }
@@ -178,7 +180,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
                 return;
             }
 
-            Call<JsonObject> call = musicListInterface.GetMusicArt(filename);
+            Call<JsonObject> call = musicListInterface.GetFullMusicArt(filename, true);
             int finalPos = pos;
             call.enqueue(new Callback<JsonObject>() {
                 @Override
@@ -206,12 +208,12 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
 
                 @Override
                 public void onFailure(@NonNull Call<JsonObject> call, @NonNull Throwable t) {
-                    Handler.ShowSnack("Houve um erro","ExternalMusicListAdapter.GetMusicArt.onFailure: " + t.toString(), activity, R_ID);
+                    Handler.ShowSnack("Houve um erro","ExternalMusicListAdapter.getMusicArt.onFailure: " + t.toString(), activity, R_ID);
                 }
             });
 
         }catch (Exception e){
-            Handler.ShowSnack("Houve um erro","ExternalMusicListAdapter.GetMusicArt: " + e.getMessage(), activity, R_ID);
+            Handler.ShowSnack("Houve um erro","ExternalMusicListAdapter.getMusicArt: " + e.getMessage(), activity, R_ID);
         }
     }
 

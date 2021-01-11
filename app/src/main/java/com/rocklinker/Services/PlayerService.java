@@ -24,6 +24,7 @@ import com.rocklinker.MainActivity;
 import com.rocklinker.R;
 import com.rocklinker.UI.Player.PlayerFragment;
 
+import java.lang.reflect.Array;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerService extends Service {
@@ -35,6 +36,7 @@ public class PlayerService extends Service {
     private static boolean shuffle = false;
     private static boolean updatePlayerFragment = false;
     private static boolean created = false;
+    private static boolean setMusic = false;
 
     private final MusicBinder musicBind = new MusicBinder();
 
@@ -73,8 +75,11 @@ public class PlayerService extends Service {
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setDataSource(CompleteURI);
             mediaPlayer.prepare();
+            //mediaPlayer.start();
+
+            setMusic=true;
         }catch (Exception e){
-            mediaPlayer.release();
+            //mediaPlayer.release();
             //Log.e("Error on PlayerService.setMusic",e.getMessage());
         }
     }
@@ -84,6 +89,7 @@ public class PlayerService extends Service {
             return false;
         }
         try {
+
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.pause();
             } else {
@@ -106,9 +112,8 @@ public class PlayerService extends Service {
         return fileInformation;
     }
 
-    public static void setFileInformation(JsonObject fileInformation){
-        PlayerService.fileInformation = fileInformation;
-        setMusic(fileInformation);
+    public static void setFileInformationArt(String artString){
+        PlayerService.fileInformation.addProperty("art", artString);
     }
 
     public static boolean isPlaying(){
@@ -169,9 +174,11 @@ public class PlayerService extends Service {
         return created;
     }
 
-    private final Runnable UpdateSongTime = new Runnable() {
+    public static boolean isSetMusic(){
+        return setMusic;
+    }
 
-        DataBaseCurrentList dataBaseCurrentList;
+    private final Runnable UpdateSongTime = new Runnable() {
 
         @SuppressLint("DefaultLocale")
         public void run() {
@@ -191,48 +198,8 @@ public class PlayerService extends Service {
                             }
                             break;
                         case "A":
-
                             if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
-
-                                dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
-                                Cursor cursor = dataBaseCurrentList.getData();
-
-                                JsonArray currentList = new JsonArray();
-                                if (cursor != null) {
-                                    cursor.moveToFirst();
-                                    while (!cursor.isAfterLast()) {
-                                        JsonObject jsonObject = new JsonObject();
-                                        jsonObject.addProperty("id", cursor.getString(0));
-                                        jsonObject.addProperty("uri", cursor.getString(1));
-                                        jsonObject.addProperty("filename", cursor.getString(2));
-                                        jsonObject.addProperty("artist", cursor.getString(3));
-                                        jsonObject.addProperty("title", cursor.getString(4));
-
-                                        currentList.add(jsonObject);
-                                        cursor.moveToNext();
-                                    }
-                                }
-
-                                int currentPositionOnList = 0;
-
-                                for (int i = 0; i < currentList.size(); i++) {
-                                    String fileName = currentList.get(i).getAsJsonObject().get("filename").getAsString();
-                                    if (fileName.equals(PlayerService.getFileName())) {
-                                        currentPositionOnList = i;
-                                    }
-                                }
-
-                                if (currentPositionOnList >= currentList.size() - 1) {
-                                    currentPositionOnList = 0;
-                                } else {
-                                    currentPositionOnList++;
-                                }
-
-                                PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
-                                PlayerService.play();
-
-                                PlayerService.updatePlayerFragment = true;
-
+                                next();
                             }
                             break;
                     }
@@ -247,5 +214,60 @@ public class PlayerService extends Service {
             myHandler.postDelayed(this, 100);
         }
     };
+
+    private void next(){
+
+        //Precisa de uma forma que seja carregado quando houver mudança na lista
+        //Por enquanto carrega sempre que troca de música
+        DataBaseCurrentList dataBaseCurrentList;
+
+        dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
+        Cursor cursor = dataBaseCurrentList.getData();
+
+        JsonArray currentList = new JsonArray();
+        if (cursor != null) {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                JsonObject jsonObject = new JsonObject();
+                jsonObject.addProperty("id", cursor.getString(0));
+                jsonObject.addProperty("uri", cursor.getString(1));
+                jsonObject.addProperty("filename", cursor.getString(2));
+                jsonObject.addProperty("artist", cursor.getString(3));
+                jsonObject.addProperty("title", cursor.getString(4));
+
+                currentList.add(jsonObject);
+                cursor.moveToNext();
+            }
+        }
+
+        int currentPositionOnList = 0;
+
+        for (int i = 0; i < currentList.size(); i++) {
+            String fileName = currentList.get(i).getAsJsonObject().get("filename").getAsString();
+            if (fileName.equals(PlayerService.getFileName())) {
+                currentPositionOnList = i;
+            }
+        }
+
+        if (currentPositionOnList >= currentList.size() - 1) {
+            currentPositionOnList = 0;
+        } else {
+            currentPositionOnList++;
+        }
+
+        PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
+        PlayerService.play();
+
+        PlayerService.updatePlayerFragment = true;
+
+        //Save current music
+        String PREFERENCES = "MYROCKLINKER_PREFERENCES";
+        SharedPreferences settings = getSharedPreferences(PREFERENCES, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        if(PlayerService.getFileInformation()!=null){
+            editor.putString("fileInformation", PlayerService.getFileInformation().toString());
+        }
+        editor.apply();
+    }
 
 }

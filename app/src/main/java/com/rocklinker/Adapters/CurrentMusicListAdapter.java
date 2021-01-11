@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Filter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -60,28 +61,34 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
         try {
 
+            viewHolder.buttonPlaying.setVisibility(View.INVISIBLE);
+            viewHolder.gifImageView.setVisibility(View.INVISIBLE);
+
             GetMusicInfo(
                     filteredJsonArray.get(position).getAsJsonObject(),
                     viewHolder.imageViewArt,
                     viewHolder.textViewArtistName,
-                    viewHolder.textViewMusicName
+                    viewHolder.textViewMusicName,
+                    position
             );
 
             String fileName = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
+
+            if(PlayerService.getFileInformation() == null){
+                return;
+            }
+
             if (PlayerService.getFileName().equals(fileName)){
-                viewHolder.imageViewPlaying.setVisibility(View.VISIBLE);
+                viewHolder.buttonPlaying.setVisibility(View.VISIBLE);
                 if (!PlayerService.isPlaying()) {
-                    viewHolder.imageViewPlaying.setImageDrawable(ResourcesCompat.getDrawable(
+                    viewHolder.buttonPlaying.setBackground(ResourcesCompat.getDrawable(
                             activity.getResources(),R.drawable.ic_pause_24,activity.getTheme()));
                     viewHolder.gifImageView.setVisibility(View.INVISIBLE);
                 } else {
-                    viewHolder.imageViewPlaying.setImageDrawable(ResourcesCompat.getDrawable(
+                    viewHolder.buttonPlaying.setBackground(ResourcesCompat.getDrawable(
                             activity.getResources(),R.drawable.ic_play_arrow_24,activity.getTheme()));
                     viewHolder.gifImageView.setVisibility(View.VISIBLE);
                 }
-            } else {
-                viewHolder.imageViewPlaying.setVisibility(View.INVISIBLE);
-                viewHolder.gifImageView.setVisibility(View.INVISIBLE);
             }
 
         }catch (Exception e){
@@ -99,7 +106,8 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
 
-        ImageView imageViewArt, imageViewPlaying;
+        ImageView imageViewArt;
+        Button buttonPlaying;
         TextView textViewArtistName, textViewMusicName;
         GifImageView gifImageView;
 
@@ -108,7 +116,7 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             imageViewArt = itemView.findViewById(R.id.itemInternalMusicList_ImageView_Art);
             textViewArtistName = itemView.findViewById(R.id.itemInternalMusicList_TextView_ArtistName);
             textViewMusicName = itemView.findViewById(R.id.itemInternalMusicList_TextView_MusicName);
-            imageViewPlaying = itemView.findViewById(R.id.itemInternalMusicList_ImageView_Playing);
+            buttonPlaying = itemView.findViewById(R.id.itemInternalMusicList_Button_Playing);
             gifImageView = itemView.findViewById(R.id.itemInternalMusicList_ImageView_Gif);
         }
     }
@@ -125,7 +133,7 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
         return jsonArray;
     }
 
-    private void GetMusicInfo(JsonObject jsonObject, ImageView imageViewArt, TextView textViewArtistName, TextView textViewMusicName){
+    private void GetMusicInfo(JsonObject jsonObject, ImageView imageViewArt, TextView textViewArtistName, TextView textViewMusicName, int position){
 
         String fileName = jsonObject.get("filename").getAsString();
         String artist = jsonObject.get("artist").getAsString();
@@ -138,7 +146,7 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             imageViewArt.setImageBitmap(null);
             textViewArtistName.setText(artist);
             textViewMusicName.setText(title);
-            getMusicArt(imageViewArt,fileName);
+            getMusicArt(imageViewArt, fileName, position);
             return;
         }
 
@@ -162,10 +170,10 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
         }
     }
 
-    private void getMusicArt(ImageView imageView, String filename){
+    private void getMusicArt(ImageView imageView, String filename, int position){
         try {
 
-            Call<JsonObject> call = musicListInterface.GetMusicArt(filename);
+            Call<JsonObject> call = musicListInterface.GetFullMusicArt(filename, true);
             call.enqueue(new Callback<JsonObject>() {
                 @Override
                 public void onResponse(@NonNull Call<JsonObject> call, @NonNull Response<JsonObject> response) {
@@ -175,7 +183,10 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
                             assert jsonObject != null;
                             JsonArray jsonArray = jsonObject.get("data").getAsJsonArray();
 
-                            imageView.setImageBitmap(Handler.ImageDecode(jsonArray.get(0).getAsJsonObject().get("art").getAsString()));
+                            String art = jsonArray.get(0).getAsJsonObject().get("art").getAsString();
+                            imageView.setImageBitmap(Handler.ImageDecode(art));
+
+                            filteredJsonArray.get(position).getAsJsonObject().addProperty("art", art);
                         }else{
                             imageView.setImageBitmap(null);
                         }
@@ -194,6 +205,5 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             Handler.ShowSnack("Houve um erro","ExternalMusicListAdapter.GetMusicArt: " + e.getMessage(), activity, R_ID);
         }
     }
-
 
 }
