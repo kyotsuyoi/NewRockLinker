@@ -7,7 +7,6 @@ import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,12 +22,12 @@ public class ExternalArtistListAdapter extends RecyclerView.Adapter <ExternalArt
     private final int R_ID;
     private boolean isBindViewHolderError;
 
-    private final JsonArray data;
-    private JsonArray filteredData;
+    private final JsonArray jsonArray;
+    private JsonArray filteredJsonArray;
 
-    public ExternalArtistListAdapter(JsonArray data, Activity activity, int R_ID) {
-        this.data = data;
-        this.filteredData = data;
+    public ExternalArtistListAdapter(JsonArray jsonArray, Activity activity, int R_ID) {
+        this.jsonArray = jsonArray;
+        this.filteredJsonArray = jsonArray;
         this.activity = activity;
         this.R_ID = R_ID;
     }
@@ -41,7 +40,7 @@ public class ExternalArtistListAdapter extends RecyclerView.Adapter <ExternalArt
 
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
         try {
-            JsonObject jsonObject = filteredData.get(position).getAsJsonObject();
+            JsonObject jsonObject = filteredJsonArray.get(position).getAsJsonObject();
 
             String quantity = jsonObject.get("quantity").getAsString()+" músicas";
             viewHolder.textViewArtist.setText(jsonObject.get("artist").getAsString());
@@ -76,11 +75,11 @@ public class ExternalArtistListAdapter extends RecyclerView.Adapter <ExternalArt
     }
 
     public int getItemCount() {
-        return filteredData.size();
+        return filteredJsonArray.size();
     }
 
     public String getArtistName(int position){
-        return filteredData.get(position).getAsJsonObject().get("artist").getAsString();
+        return filteredJsonArray.get(position).getAsJsonObject().get("artist").getAsString();
     }
 
     public Filter getFilter() {
@@ -91,31 +90,30 @@ public class ExternalArtistListAdapter extends RecyclerView.Adapter <ExternalArt
                 FilterResults results = new FilterResults();
 
                 if(charSequence == null || charSequence.length() == 0){
-                    results.values = data;
-                    results.count = data.size();
+                    results.values = jsonArray;
+                    results.count = jsonArray.size();
                 }else{
 
-                    JsonArray jsonArray = new JsonArray();
+                    JsonArray newJsonArray = new JsonArray();
 
                     int i = 0;
                     try {
 
-                        while (i < data.size()) {
-                            String A = data.get(i).getAsJsonObject().get("artist").toString().toLowerCase();
+                        while (i < jsonArray.size()) {
+                            String A = jsonArray.get(i).getAsJsonObject().get("artist").toString().toLowerCase();
                             String B = charSequence.toString().toLowerCase();
                             if (A.contains(B)) {
-                                jsonArray.add(data.get(i));
+                                newJsonArray.add(jsonArray.get(i));
                             }
                             i++;
                         }
 
-                        results.values = jsonArray;
-                        results.count = jsonArray.size();
+                        results.values = newJsonArray;
+                        results.count = newJsonArray.size();
 
                     }catch (Exception e){
-                        Toast.makeText(activity,e.getMessage(),Toast.LENGTH_LONG).show();
-                        results.values = data;
-                        results.count = data.size();
+                        results.values = jsonArray;
+                        results.count = jsonArray.size();
                     }
                 }
 
@@ -124,10 +122,14 @@ public class ExternalArtistListAdapter extends RecyclerView.Adapter <ExternalArt
 
             protected void publishResults(CharSequence charSequence, FilterResults filterResults)
             {
-                filteredData = (JsonArray) filterResults.values;
+                filteredJsonArray = (JsonArray) filterResults.values;
                 notifyDataSetChanged();
             }
         };
+    }
+
+    public void clearFilter(){
+        filteredJsonArray = jsonArray;
     }
 
 }

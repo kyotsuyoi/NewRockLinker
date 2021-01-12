@@ -523,14 +523,6 @@ public class PlayerFragment extends Fragment {
                 if(PlayerService.isUpdatePlayerFragment()){
                     setMusicInformation();
 
-                    String Minutes = String.valueOf(TimeUnit.MILLISECONDS.toMinutes(duration));
-                    String Seconds = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)
-                            - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration)));
-                    if (Seconds.length() < 2) {
-                        Seconds = "0" + Seconds;
-                    }
-                    textViewDuration.setText(String.format("%s:%s", Minutes, Seconds));
-
                     if (!PlayerService.isPlaying()) {
                         buttonPlay.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_play_arrow_24, main.getTheme()));
                     }else{
@@ -550,6 +542,14 @@ public class PlayerFragment extends Fragment {
                     Seconds = "0" + Seconds;
                 }
                 textViewCurrentTime.setText(String.format("%s:%s", Minutes, Seconds));
+
+                Minutes = String.valueOf(TimeUnit.MILLISECONDS.toMinutes(duration));
+                Seconds = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)
+                        - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration)));
+                if (Seconds.length() < 2) {
+                    Seconds = "0" + Seconds;
+                }
+                textViewDuration.setText(String.format("%s:%s", Minutes, Seconds));
 
                 seekbar.setMax((int) duration);
                 if(!isTrackingTouch) {

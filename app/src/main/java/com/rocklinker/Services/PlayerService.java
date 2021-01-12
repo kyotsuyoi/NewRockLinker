@@ -48,7 +48,7 @@ public class PlayerService extends Service {
     private static boolean created = false;
     private static boolean setMusic = false;
 
-    private static long cur = 0;//To refresh play and pause;
+    private static long cur = 0;//To refresh 'currentTime' during 'play()';
 
     private final MusicBinder musicBind = new MusicBinder();
 
@@ -138,10 +138,12 @@ public class PlayerService extends Service {
     }
 
     public static String getFileName(){
+        String fileName = "";
         if(PlayerService.fileInformation == null){
-            return null;
+            return fileName;
         }
-        return PlayerService.fileInformation.get("filename").getAsString();
+        fileName = fileInformation.get("filename").getAsString();
+        return fileName;
     }
 
     public static JsonObject getFileInformation(){

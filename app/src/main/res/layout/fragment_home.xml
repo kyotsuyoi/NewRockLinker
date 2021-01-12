@@ -7,6 +7,7 @@
     tools:context=".UI.Home.HomeFragment">
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -20,12 +21,12 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/purple_500">
+            android:background="@drawable/gradient">
 
             <ImageView
-                android:id="@+id/imageView2"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
+                android:id="@+id/imageView"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
                 android:background="@drawable/music_rose_clearfield"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -36,9 +37,54 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:rotation="-21"
-                android:text="BEST"
+                android:text="As 20 mais"
                 android:textDirection="rtl"
                 android:textSize="40sp"
+                android:textStyle="bold|italic"
+                android:typeface="serif"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/imageView"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        app:cardCornerRadius="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cardView2">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/gradient">
+
+            <ImageView
+                android:id="@+id/imageView2"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:background="@drawable/current"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:rotation="-21"
+                android:text="Recentes"
+                android:textDirection="rtl"
+                android:textSize="40sp"
+                android:textStyle="bold|italic"
                 android:typeface="serif"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"

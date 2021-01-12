@@ -16,8 +16,8 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.SearchView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.res.ResourcesCompat;
@@ -43,12 +43,10 @@ import com.rocklinker.R;
 import com.rocklinker.Services.PlayerService;
 
 import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -57,13 +55,15 @@ import retrofit2.Response;
 public class ListFragment extends Fragment {
 
     private MainActivity main;
-    private int R_ID = R.id.nav_view;
+    private final int R_ID = R.id.nav_view;
     private final com.rocklinker.Common.Handler Handler = new com.rocklinker.Common.Handler();
 
     private final PlayerInterface musicListInterface = ApiClient.getApiClient().create(PlayerInterface.class);
     private RecyclerView recyclerView;
 
-    private Button buttonExternalArtist, buttonCurrentList, buttonFavorites;
+    private Button buttonExternalArtist, buttonCurrentList, buttonFavorites, buttonBack;
+
+    private SearchView searchView;
 
     private ExternalArtistListAdapter externalArtistListAdapter;
     private ExternalMusicListAdapter externalMusicListAdapter;
@@ -78,7 +78,7 @@ public class ListFragment extends Fragment {
     //Type 5 to current music list
 
     private String path;
-    private String URI = ApiClient.BASE_URL+"songs/";
+    private final String URI = ApiClient.BASE_URL+"songs/";
 
     private DataBaseCurrentList dataBaseCurrentList;
     private DataBaseFavorite dataBaseFavorite;
@@ -95,30 +95,11 @@ public class ListFragment extends Fragment {
         buttonExternalArtist = root.findViewById(R.id.fragmentList_Button_Artist);
         buttonCurrentList = root.findViewById(R.id.fragmentList_Button_CurrentList);
         buttonFavorites = root.findViewById(R.id.fragmentList_Button_Favorites);
+        buttonBack = root.findViewById(R.id.fragmentList_Button_Back);
 
-        buttonExternalArtist.setOnClickListener(v -> {
-            getExternalArtistList();
-            listType = 4;
+        searchView = root.findViewById(R.id.fragmentList_SearchView);
 
-            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
-            buttonExternalArtist.startAnimation(animationOutIn);
-        });
-
-        buttonCurrentList.setOnClickListener(v -> {
-            loadCurrentList(false);
-            listType = 5;
-
-            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
-            buttonCurrentList.startAnimation(animationOutIn);
-        });
-
-        buttonFavorites.setOnClickListener(v -> {
-            loadCurrentList(true);
-            listType = 5;
-
-            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
-            buttonFavorites.startAnimation(animationOutIn);
-        });
+        setButtons();
 
         try {
             main = (MainActivity) getActivity();
@@ -126,6 +107,7 @@ public class ListFragment extends Fragment {
             path = Objects.requireNonNull(main.getExternalFilesDir(Environment.DIRECTORY_MUSIC)).getPath();
             getInternalMusicList();
             setRecyclerView();
+            setSearchView();
             //getExternalArtistList();
 
             dataBaseCurrentList = new DataBaseCurrentList(main);
@@ -151,6 +133,43 @@ public class ListFragment extends Fragment {
     public void onPause() {
         myHandler.removeCallbacks(UpdateCurrentTrack);
         super.onPause();
+    }
+
+    private void setButtons(){
+
+        buttonExternalArtist.setOnClickListener(v -> {
+            getExternalArtistList();
+            listType = 4;
+
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+            buttonExternalArtist.startAnimation(animationOutIn);
+        });
+
+        buttonCurrentList.setOnClickListener(v -> {
+            loadCurrentList(false);
+            listType = 5;
+
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+            buttonCurrentList.startAnimation(animationOutIn);
+        });
+
+        buttonFavorites.setOnClickListener(v -> {
+            loadCurrentList(true);
+            listType = 5;
+
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+            buttonFavorites.startAnimation(animationOutIn);
+        });
+
+        buttonBack.setOnClickListener(v->{
+            switch (listType){
+                case 3:
+                    listType = 4;
+                    if (externalArtistListAdapter == null) return;
+                    recyclerView.setAdapter(externalArtistListAdapter);
+                    break;
+            }
+        });
     }
 
     private void setRecyclerView(){
@@ -219,6 +238,55 @@ public class ListFragment extends Fragment {
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","ListFragment.setRecyclerView: " + e.getMessage(), main, R_ID);
         }
+    }
+
+    private void setSearchView(){
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                switch (listType){
+                    case 3:
+                        if(externalMusicListAdapter != null){
+                            externalMusicListAdapter.getFilter().filter(s);
+                        }
+                        break;
+                    case 4:
+                        if(externalArtistListAdapter != null){
+                            externalArtistListAdapter.getFilter().filter(s);
+                        }
+                        break;
+                    case 5:
+                        if (currentMusicListAdapter != null) {
+                            currentMusicListAdapter.getFilter().filter(s);
+                        }
+                        break;
+                }
+
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                switch (listType){
+                    case 3:
+                        if (externalMusicListAdapter != null && s.equals("")) {
+                            externalMusicListAdapter.clearFilter();
+                        }
+                        break;
+                    case 4:
+                        if (externalArtistListAdapter != null && s.equals("")) {
+                            externalArtistListAdapter.clearFilter();
+                        }
+                        break;
+                    case 5:
+                        if (currentMusicListAdapter != null && s.equals("")) {
+                            currentMusicListAdapter.clearFilter();
+                        }
+                        break;
+                }
+                return false;
+            }
+        });
     }
 
     private void getInternalMusicList(){

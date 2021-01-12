@@ -25,10 +25,6 @@ import com.rocklinker.R;
 import com.rocklinker.Services.PlayerService;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 
 import pl.droidsonroids.gif.GifImageView;
 import retrofit2.Call;
@@ -37,7 +33,7 @@ import retrofit2.Response;
 
 public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicListAdapter.ViewHolder> {
 
-    private JsonArray jsonArray;
+    private final JsonArray jsonArray;
     private JsonArray filteredJsonArray;
     private final Activity activity;
     private final com.rocklinker.Common.Handler Handler = new com.rocklinker.Common.Handler();
@@ -213,4 +209,54 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
         }
     }
 
+    public Filter getFilter()
+    {
+        return new Filter()
+        {
+            protected FilterResults performFiltering(CharSequence charSequence)
+            {
+                FilterResults results = new FilterResults();
+
+                if(charSequence == null || charSequence.length() == 0){
+                    results.values = jsonArray;
+                    results.count = jsonArray.size();
+                }else{
+
+                    JsonArray newJsonArray = new JsonArray();
+
+                    int i = 0;
+                    try {
+
+                        while (i < jsonArray.size()) {
+                            String A = jsonArray.get(i).getAsJsonObject().get("filename").getAsString().toLowerCase();
+                            String B = charSequence.toString().toLowerCase();
+                            if (A.contains(B)) {
+                                newJsonArray.add(jsonArray.get(i));
+                            }
+                            i++;
+                        }
+
+                        results.values = newJsonArray;
+                        results.count = newJsonArray.size();
+
+                    }catch (Exception e){
+                        results.values = jsonArray;
+                        results.count = jsonArray.size();
+                    }
+                }
+
+                return results;
+            }
+
+            protected void publishResults(CharSequence charSequence, FilterResults filterResults)
+            {
+                filteredJsonArray = (JsonArray) filterResults.values;
+                notifyDataSetChanged();
+            }
+        };
+    }
+
+    public void clearFilter(){
+        filteredJsonArray = jsonArray;
+    }
 }

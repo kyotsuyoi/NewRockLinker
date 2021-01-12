@@ -79,7 +79,6 @@ public class MainActivity extends AppCompatActivity {
                 }, Context.BIND_AUTO_CREATE);
             }
 
-
             HeadphonePlugService headphonePlugService = new HeadphonePlugService();
             registerReceiver(headphonePlugService, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
             //registerReceiver(headphonePlugService, new IntentFilter((Intent.ACTION_MEDIA_BUTTON)));
