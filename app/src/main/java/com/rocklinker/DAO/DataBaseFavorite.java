@@ -11,7 +11,6 @@ public class DataBaseFavorite extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "rocklinker.db";
     public static final String TABLE_NAME = "playlist";
-    private Context context;
 
     public DataBaseFavorite(Context context) {super(context, DATABASE_NAME, null, 1);}
 
@@ -32,11 +31,11 @@ public class DataBaseFavorite extends SQLiteOpenHelper {
     public void createTable(){
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL(
-                "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + "(id INTEGER PRIMARY KEY, uri TEXT, file_name TEXT, artist TEXT, title TEXT)"
+                "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + "(id INTEGER PRIMARY KEY, uri TEXT, file_name TEXT, artist TEXT, title TEXT, art LONGTEXT)"
         );
     }
 
-    public boolean insert(String URI, String fileName, String artist, String title) {
+    public boolean insert(String URI, String fileName, String artist, String title, String art) {
         try {
             SQLiteDatabase db = this.getWritableDatabase();
 
@@ -45,6 +44,7 @@ public class DataBaseFavorite extends SQLiteOpenHelper {
             contentValues.put("file_name", fileName);
             contentValues.put("artist", artist);
             contentValues.put("title", title);
+            contentValues.put("art", art);
 
             db.insert(TABLE_NAME, null, contentValues);
             return true;

@@ -65,7 +65,6 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             viewHolder.gifImageView.setVisibility(View.INVISIBLE);
 
             GetMusicInfo(
-                    filteredJsonArray.get(position).getAsJsonObject(),
                     viewHolder.imageViewArt,
                     viewHolder.textViewArtistName,
                     viewHolder.textViewMusicName,
@@ -133,11 +132,11 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
         return jsonArray;
     }
 
-    private void GetMusicInfo(JsonObject jsonObject, ImageView imageViewArt, TextView textViewArtistName, TextView textViewMusicName, int position){
+    private void GetMusicInfo(ImageView imageViewArt, TextView textViewArtistName, TextView textViewMusicName, int position){
 
-        String fileName = jsonObject.get("filename").getAsString();
-        String artist = jsonObject.get("artist").getAsString();
-        String title = jsonObject.get("title").getAsString();
+        String fileName = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
+        String artist = filteredJsonArray.get(position).getAsJsonObject().get("artist").getAsString();
+        String title = filteredJsonArray.get(position).getAsJsonObject().get("title").getAsString();
 
         String path = activity.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getPath();
         File file = new File(path,fileName);
@@ -146,6 +145,14 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             imageViewArt.setImageBitmap(null);
             textViewArtistName.setText(artist);
             textViewMusicName.setText(title);
+
+            if(filteredJsonArray.get(position).getAsJsonObject().has("art")
+                    && filteredJsonArray.get(position).getAsJsonObject().get("art") != null) {
+                String art = filteredJsonArray.get(position).getAsJsonObject().get("art").getAsString();
+                imageViewArt.setImageBitmap(Handler.ImageDecode(art));
+                return;
+            }
+
             getMusicArt(imageViewArt, fileName, position);
             return;
         }

@@ -1,12 +1,18 @@
 package com.rocklinker.Services;
 
 import android.annotation.SuppressLint;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -19,24 +25,30 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.rocklinker.Common.PlayerNotification;
 import com.rocklinker.DAO.DataBaseCurrentList;
 import com.rocklinker.MainActivity;
 import com.rocklinker.R;
 import com.rocklinker.UI.Player.PlayerFragment;
 
 import java.lang.reflect.Array;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerService extends Service {
 
     private static MediaPlayer mediaPlayer;
     private static JsonObject fileInformation;
+    private static Context context;
     private final Handler myHandler = new Handler();
     private static String repeat = "N";
     private static boolean shuffle = false;
     private static boolean updatePlayerFragment = false;
+    private static boolean updateListFragment = false;
     private static boolean created = false;
     private static boolean setMusic = false;
+
+    private static long cur = 0;//To refresh play and pause;
 
     private final MusicBinder musicBind = new MusicBinder();
 
@@ -57,6 +69,9 @@ public class PlayerService extends Service {
         super.onCreate();
         created=true;
         myHandler.postDelayed(UpdateSongTime, 100);
+        registerReceiver(broadcastReceiver, new IntentFilter("broadcastAction"));
+        createChannel();
+        context = getApplicationContext();
     }
 
     @Override
@@ -73,6 +88,7 @@ public class PlayerService extends Service {
                 mediaPlayer.release();
             }
             mediaPlayer = new MediaPlayer();
+            cur=0;
             mediaPlayer.setDataSource(CompleteURI);
             mediaPlayer.prepare();
             //mediaPlayer.start();
@@ -91,13 +107,33 @@ public class PlayerService extends Service {
         try {
 
             if (mediaPlayer.isPlaying()) {
+                cur = mediaPlayer.getCurrentPosition();
                 mediaPlayer.pause();
             } else {
+                mediaPlayer.seekTo((int)cur);
                 mediaPlayer.start();
             }
+            PlayerNotification.createNotification(context);
+
+            updateListFragment = true;
+
             return mediaPlayer.isPlaying();
         }catch (Exception e){
             return false;
+        }
+    }
+
+    public void forcePause(){
+        if(mediaPlayer == null){
+            return;
+        }
+        try {
+
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+            }
+            PlayerNotification.createNotification(context);
+        }catch (Exception e){
         }
     }
 
@@ -215,6 +251,7 @@ public class PlayerService extends Service {
         }
     };
 
+    //Requer refatoração de previous e next (verificar também com next de PlayerFragment)
     private void next(){
 
         //Precisa de uma forma que seja carregado quando houver mudança na lista
@@ -268,6 +305,118 @@ public class PlayerService extends Service {
             editor.putString("fileInformation", PlayerService.getFileInformation().toString());
         }
         editor.apply();
+
+        updateListFragment = true;
+    }
+
+    //Requer refatoração de previous e next (verificar também com previous de PlayerFragment)
+    private void previous(){
+
+        //Precisa de uma forma que seja carregado quando houver mudança na lista
+        //Por enquanto carrega sempre que troca de música
+        DataBaseCurrentList dataBaseCurrentList;
+
+        dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
+        Cursor cursor = dataBaseCurrentList.getData();
+
+        JsonArray currentList = new JsonArray();
+        if (cursor != null) {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                JsonObject jsonObject = new JsonObject();
+                jsonObject.addProperty("id", cursor.getString(0));
+                jsonObject.addProperty("uri", cursor.getString(1));
+                jsonObject.addProperty("filename", cursor.getString(2));
+                jsonObject.addProperty("artist", cursor.getString(3));
+                jsonObject.addProperty("title", cursor.getString(4));
+
+                currentList.add(jsonObject);
+                cursor.moveToNext();
+            }
+        }
+
+        int currentPositionOnList = 0;
+
+        for (int i = 0; i < currentList.size(); i++) {
+            String fileName = currentList.get(i).getAsJsonObject().get("filename").getAsString();
+            if (fileName.equals(PlayerService.getFileName())) {
+                currentPositionOnList = i;
+            }
+        }
+
+        if (currentPositionOnList == 0) {
+            currentPositionOnList = currentList.size() - 1;
+        } else {
+            currentPositionOnList--;
+        }
+
+        PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
+        PlayerService.play();
+
+        PlayerService.updatePlayerFragment = true;
+
+        //Save current music
+        String PREFERENCES = "MYROCKLINKER_PREFERENCES";
+        SharedPreferences settings = getSharedPreferences(PREFERENCES, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        if(PlayerService.getFileInformation()!=null){
+            editor.putString("fileInformation", PlayerService.getFileInformation().toString());
+        }
+        editor.apply();
+
+        updateListFragment = true;
+    }
+
+    public static boolean isUpdateListFragment(){
+        if(updateListFragment){
+            updateListFragment = false;
+            return true;
+        }
+        return false;
+    }
+
+    private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = Objects.requireNonNull(intent.getExtras()).getString("actionName");
+            switch (Objects.requireNonNull(action)){
+                case "play_pause":
+                    play();
+                    updatePlayerFragment = true;
+                    break;
+                case "pause":
+                    forcePause();
+                    updatePlayerFragment = true;
+                    break;
+                case "previous":
+                    previous();
+                    updatePlayerFragment = true;
+                    break;
+                case "next":
+                    next();
+                    updatePlayerFragment = true;
+                    break;
+            }
+        }
+    };
+
+    private void createChannel(){
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    PlayerNotification.CHANNEL_ID,
+                    "Test",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if(notificationManager != null){
+                notificationManager.createNotificationChannel(channel);
+            }
+
+            registerReceiver(broadcastReceiver, new IntentFilter("broadcastAction"));
+            startService(new Intent(getBaseContext(), OnClearFormRecentService.class));
+        }
     }
 
 }

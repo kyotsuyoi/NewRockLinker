@@ -7,7 +7,7 @@
     android:background="@drawable/rounded_box">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <androidx.cardview.widget.CardView
@@ -81,16 +81,16 @@
             android:layout_marginBottom="16dp"
             android:background="@drawable/ic_favorite_border_24"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/dialogMusicMenu_Button_OK"
+            app:layout_constraintEnd_toStartOf="@+id/dialogMusicMenu_Button_Close"
             app:layout_constraintStart_toEndOf="@+id/dialogMusicMenu_Button_Download" />
 
         <Button
-            android:id="@+id/dialogMusicMenu_Button_OK"
+            android:id="@+id/dialogMusicMenu_Button_Close"
             android:layout_width="70dp"
             android:layout_height="70dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp"
-            android:text="@string/ok"
+            android:background="@drawable/ic_close_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 

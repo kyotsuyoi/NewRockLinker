@@ -1,11 +1,13 @@
 package com.rocklinker.UI.List;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -82,6 +85,8 @@ public class ListFragment extends Fragment {
     private JsonArray currentList;
 
     private Animation animationOutIn;
+
+    private final android.os.Handler myHandler = new Handler();
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_list, container, false);
@@ -136,6 +141,18 @@ public class ListFragment extends Fragment {
         return root;
     }
 
+    @Override
+    public void onResume() {
+        myHandler.postDelayed(UpdateCurrentTrack, 100);
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        myHandler.removeCallbacks(UpdateCurrentTrack);
+        super.onPause();
+    }
+
     private void setRecyclerView(){
         try {
             recyclerView.addOnItemTouchListener(new RecyclerItemClickListener(
@@ -149,6 +166,7 @@ public class ListFragment extends Fragment {
                                 if(externalMusicListAdapter == null) return;
                                 jsonObject = externalMusicListAdapter.getItem(position);
                                 jsonObject.addProperty("uri",URI);
+                                jsonObject.remove("art");
                                 PlayerService.setMusic(jsonObject);
                                 PlayerService.play();
                                 main.SavePreferences();
@@ -310,6 +328,7 @@ public class ListFragment extends Fragment {
                 jsonObject.addProperty("filename", cursor.getString(2));
                 jsonObject.addProperty("artist", cursor.getString(3));
                 jsonObject.addProperty("title", cursor.getString(4));
+                jsonObject.addProperty("art", cursor.getString(5));
 
                 currentList.add(jsonObject);
                 cursor.moveToNext();
@@ -333,7 +352,11 @@ public class ListFragment extends Fragment {
                 String fileName = jsonElement.getAsJsonObject().get("filename").getAsString();
                 String artist = jsonElement.getAsJsonObject().get("artist").getAsString();
                 String title = jsonElement.getAsJsonObject().get("title").getAsString();
-                dataBaseCurrentList.insert(URI, fileName, artist, title);
+                String art = "";
+                if(jsonElement.getAsJsonObject().has("art")){
+                    art = jsonElement.getAsJsonObject().get("art").getAsString();
+                }
+                dataBaseCurrentList.insert(URI, fileName, artist, title, art);
             }
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","ListFragment.insertCurrentList: " + e.getMessage(), main, R_ID);
@@ -351,7 +374,7 @@ public class ListFragment extends Fragment {
             TextView textViewArtist = dialog.findViewById(R.id.dialogMusicMenu_TextView_Artist);
             TextView textViewYear = dialog.findViewById(R.id.dialogMusicMenu_TextView_Year);
             ImageView imageView = dialog.findViewById(R.id.dialogMusicMenu_ImageView);
-            Button buttonOK = dialog.findViewById(R.id.dialogMusicMenu_Button_OK);
+            Button buttonOK = dialog.findViewById(R.id.dialogMusicMenu_Button_Close);
             Button buttonFavorite = dialog.findViewById(R.id.dialogMusicMenu_Button_Favorite);
             Button buttonDownload = dialog.findViewById(R.id.dialogMusicMenu_Button_Download);
 
@@ -400,6 +423,7 @@ public class ListFragment extends Fragment {
                 String filename = jsonObject.get("filename").getAsString();
                 String artist = jsonObject.get("artist").getAsString();
                 String title = jsonObject.get("title").getAsString();
+                String art = jsonObject.get("art").getAsString();
 
                 int ID = dataBaseFavorite.getID(filename);
                 if(ID != 0){
@@ -412,7 +436,7 @@ public class ListFragment extends Fragment {
                     return;
                 }
 
-                dataBaseFavorite.insert(URI,filename,artist,title);
+                dataBaseFavorite.insert(URI, filename, artist, title, art);
                 //Toast.makeText(getContext(),"Salva nas favoritas!",Toast.LENGTH_LONG).show();
                 buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_24, main.getTheme()));
 
@@ -429,5 +453,19 @@ public class ListFragment extends Fragment {
             Handler.ShowSnack("Houve um erro","ListFragment.DialogMusicMenu: " + e.getMessage(), main, R_ID);
         }
     }
+
+    private final Runnable UpdateCurrentTrack = new Runnable() {
+
+        @SuppressLint("DefaultLocale")
+        public void run() {
+            if(PlayerService.getFileName() != null) {
+                if(PlayerService.isUpdateListFragment()) {
+                    currentMusicListAdapter.notifyDataSetChanged();
+                }
+            }
+
+            myHandler.postDelayed(this, 100);
+        }
+    };
 
 }

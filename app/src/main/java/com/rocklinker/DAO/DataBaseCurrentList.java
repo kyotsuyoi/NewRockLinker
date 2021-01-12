@@ -33,11 +33,11 @@ public class DataBaseCurrentList extends SQLiteOpenHelper {
     public void createTable(){
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL(
-                "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + "(id INTEGER PRIMARY KEY, uri TEXT, file_name TEXT, artist TEXT, title TEXT)"
+                "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + "(id INTEGER PRIMARY KEY, uri TEXT, file_name TEXT, artist TEXT, title TEXT, art LONGTEXT)"
         );
     }
 
-    public boolean insert(String URI, String fileName, String artist, String title) {
+    public boolean insert(String URI, String fileName, String artist, String title, String art) {
         try {
             SQLiteDatabase db = this.getWritableDatabase();
 
@@ -46,6 +46,7 @@ public class DataBaseCurrentList extends SQLiteOpenHelper {
             contentValues.put("file_name", fileName);
             contentValues.put("artist", artist);
             contentValues.put("title", title);
+            contentValues.put("art", art);
 
             db.insert(TABLE_NAME, null, contentValues);
             return true;
@@ -59,5 +60,26 @@ public class DataBaseCurrentList extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor res = db.rawQuery("SELECT * FROM "+TABLE_NAME+" ORDER BY id DESC", null);
         return res;
+    }
+
+    public int getID(String filename){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT id FROM " + TABLE_NAME + " WHERE file_name = '" + filename + "'", null);
+
+        if(cursor.getCount() == 0) return 0;
+
+        cursor.moveToFirst();
+        int ID = cursor.getInt(0);
+        return ID;
+    }
+
+    public String getArt(String filename){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT art FROM " + TABLE_NAME + " WHERE file_name = '" + filename + "'", null);
+
+        if(cursor.getCount() == 0) return "";
+
+        cursor.moveToFirst();
+        return cursor.getString(0);
     }
 }

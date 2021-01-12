@@ -25,7 +25,9 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".Services.BroadcastService"/>
+        <receiver android:name=".Services.HeadphoneButtonService"/>
+        <receiver android:name=".Services.HeadphonePlugService"/>
+        <receiver android:name=".Services.NotificationActionService"/>
 
         <service
             android:name=".Services.PlayerService"

@@ -64,8 +64,6 @@ public class PlayerFragment extends Fragment {
     private SeekBar seekbar;
     private ImageView imageViewArt;
 
-    public JsonObject musicInformation;
-
     private long currentTime = 0;
     private long duration = 0;
     private final android.os.Handler myHandler = new Handler();
@@ -283,6 +281,7 @@ public class PlayerFragment extends Fragment {
             String filename = jsonObject.get("filename").getAsString();
             String artist = jsonObject.get("artist").getAsString();
             String title = jsonObject.get("title").getAsString();
+            String art = jsonObject.get("art").getAsString();
 
             int ID = dataBaseFavorite.getID(filename);
             if(ID != 0){
@@ -295,7 +294,7 @@ public class PlayerFragment extends Fragment {
                 return;
             }
 
-            dataBaseFavorite.insert(URI,filename,artist,title);
+            dataBaseFavorite.insert(URI, filename, artist, title, art);
             //Toast.makeText(getContext(),"Salva nas favoritas!",Toast.LENGTH_LONG).show();
             buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_24, main.getTheme()));
 
@@ -350,16 +349,22 @@ public class PlayerFragment extends Fragment {
             textViewArtist.setText(jsonObject.get("artist").getAsString());
             textViewTitle.setText(jsonObject.get("title").getAsString());
 
-            musicInformation = new JsonObject();
+            /*musicInformation = new JsonObject();
             musicInformation.addProperty("artist", jsonObject.get("artist").getAsString());
-            musicInformation.addProperty("title", jsonObject.get("title").getAsString());
+            musicInformation.addProperty("title", jsonObject.get("title").getAsString());*/
 
-            if(jsonObject.has("art")) {
+            /*if(jsonObject.has("art")) {
                 imageViewArt.setImageBitmap(Handler.ImageDecode(jsonObject.get("art").getAsString()));
                 musicInformation.addProperty("art", jsonObject.get("art").getAsString());
-            }
+            }*/
 
-            getExternalMusicArt(jsonObject.get("filename").getAsString());
+            dataBaseCurrentList = new DataBaseCurrentList(main);
+            dataBaseCurrentList.createTable();
+            String art = dataBaseCurrentList.getArt(jsonObject.get("filename").getAsString());
+            imageViewArt.setImageBitmap(Handler.ImageDecode(art));
+            //musicInformation.addProperty("art", art);
+
+            //getExternalMusicArt(jsonObject.get("filename").getAsString());
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","PlayerFragment.getExternalMusicInfo: " + e.getMessage(), main, R_ID);
         }
@@ -385,9 +390,8 @@ public class PlayerFragment extends Fragment {
                             JsonArray jsonArray = jsonObject.get("data").getAsJsonArray();
 
                             imageViewArt.setImageBitmap(Handler.ImageDecode(jsonArray.get(0).getAsJsonObject().get("art").getAsString()));
-                            musicInformation.addProperty("art", jsonArray.get(0).getAsJsonObject().get("art").getAsString());
+                            //musicInformation.addProperty("art", jsonArray.get(0).getAsJsonObject().get("art").getAsString());
                             PlayerService.setFileInformationArt(jsonArray.get(0).getAsJsonObject().get("art").getAsString());
-                            //PlayerNotification.createNotification(main);
                         }else{
                             imageViewArt.setImageBitmap(null);
                         }
@@ -499,7 +503,8 @@ public class PlayerFragment extends Fragment {
                 String fileName = jsonElement.getAsJsonObject().get("filename").getAsString();
                 String artist = jsonElement.getAsJsonObject().get("artist").getAsString();
                 String title = jsonElement.getAsJsonObject().get("title").getAsString();
-                dataBaseCurrentList.insert(URI,fileName,artist,title);
+                String art = jsonElement.getAsJsonObject().get("title").getAsString();
+                dataBaseCurrentList.insert(URI, fileName, artist, title, art);
             }
 
             setCurrentPositionOnList();
@@ -517,6 +522,22 @@ public class PlayerFragment extends Fragment {
 
                 if(PlayerService.isUpdatePlayerFragment()){
                     setMusicInformation();
+
+                    String Minutes = String.valueOf(TimeUnit.MILLISECONDS.toMinutes(duration));
+                    String Seconds = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)
+                            - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration)));
+                    if (Seconds.length() < 2) {
+                        Seconds = "0" + Seconds;
+                    }
+                    textViewDuration.setText(String.format("%s:%s", Minutes, Seconds));
+
+                    if (!PlayerService.isPlaying()) {
+                        buttonPlay.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_play_arrow_24, main.getTheme()));
+                    }else{
+                        buttonPlay.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_pause_24, main.getTheme()));
+                    }
+                    animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+                    buttonPlay.startAnimation(animationOutIn);
                 }
 
                 currentTime = PlayerService.getCurrentTime();
@@ -530,21 +551,9 @@ public class PlayerFragment extends Fragment {
                 }
                 textViewCurrentTime.setText(String.format("%s:%s", Minutes, Seconds));
 
-                Minutes = String.valueOf(TimeUnit.MILLISECONDS.toMinutes(duration));
-                Seconds = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)
-                        - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration)));
-                if (Seconds.length() < 2) {
-                    Seconds = "0" + Seconds;
-                }
-                textViewDuration.setText(String.format("%s:%s", Minutes, Seconds));
-
                 seekbar.setMax((int) duration);
                 if(!isTrackingTouch) {
                     seekbar.setProgress((int) currentTime);
-                }
-
-                if (!PlayerService.isPlaying()) {
-                    buttonPlay.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_play_arrow_24, main.getTheme()));
                 }
             }
 

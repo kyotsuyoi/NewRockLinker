@@ -3,26 +3,26 @@ package com.rocklinker;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.os.Binder;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.rocklinker.Services.MusicBinder;
+import com.rocklinker.Services.HeadphoneButtonService;
+import com.rocklinker.Services.HeadphonePlugService;
 import com.rocklinker.Services.PlayerService;
 
-import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-import java.lang.ref.WeakReference;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -79,9 +79,23 @@ public class MainActivity extends AppCompatActivity {
                 }, Context.BIND_AUTO_CREATE);
             }
 
+
+            HeadphonePlugService headphonePlugService = new HeadphonePlugService();
+            registerReceiver(headphonePlugService, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+            //registerReceiver(headphonePlugService, new IntentFilter((Intent.ACTION_MEDIA_BUTTON)));
+
+            AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            ComponentName receiverComponent = new ComponentName(this, HeadphoneButtonService.class);
+            audioManager.registerMediaButtonEventReceiver(receiverComponent);
+
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","MainActivity.onCreate: " + e.getMessage(), this, R_ID);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        //super.onBackPressed();
     }
 
     public void SavePreferences(){
