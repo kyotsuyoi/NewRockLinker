@@ -100,7 +100,7 @@ public class PlayerService extends Service {
         }
     }
 
-    public static boolean play(){
+    public boolean play(){
         if(mediaPlayer == null){
             return false;
         }
@@ -216,11 +216,39 @@ public class PlayerService extends Service {
         return setMusic;
     }
 
+    private JsonArray getCurrentPositionOnList(){
+
+        //Precisa de uma forma que seja carregado quando houver mudança na lista
+        //Por enquanto carrega sempre que troca de música
+        DataBaseCurrentList dataBaseCurrentList;
+
+        dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
+        Cursor cursor = dataBaseCurrentList.getData();
+
+        JsonArray currentList = new JsonArray();
+        if (cursor != null) {
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                JsonObject jsonObject = new JsonObject();
+                jsonObject.addProperty("id", cursor.getString(0));
+                jsonObject.addProperty("uri", cursor.getString(1));
+                jsonObject.addProperty("filename", cursor.getString(2));
+                jsonObject.addProperty("artist", cursor.getString(3));
+                jsonObject.addProperty("title", cursor.getString(4));
+
+                currentList.add(jsonObject);
+                cursor.moveToNext();
+            }
+        }
+
+        return currentList;
+    }
+
     private final Runnable UpdateSongTime = new Runnable() {
 
         @SuppressLint("DefaultLocale")
         public void run() {
-            if(PlayerService.getFileName() != null && created) {
+            if(PlayerService.getFileName() != null && created && mediaPlayer.isPlaying()) {
 
                 try{
                     switch (repeat) {
@@ -258,26 +286,7 @@ public class PlayerService extends Service {
 
         //Precisa de uma forma que seja carregado quando houver mudança na lista
         //Por enquanto carrega sempre que troca de música
-        DataBaseCurrentList dataBaseCurrentList;
-
-        dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
-        Cursor cursor = dataBaseCurrentList.getData();
-
-        JsonArray currentList = new JsonArray();
-        if (cursor != null) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.addProperty("id", cursor.getString(0));
-                jsonObject.addProperty("uri", cursor.getString(1));
-                jsonObject.addProperty("filename", cursor.getString(2));
-                jsonObject.addProperty("artist", cursor.getString(3));
-                jsonObject.addProperty("title", cursor.getString(4));
-
-                currentList.add(jsonObject);
-                cursor.moveToNext();
-            }
-        }
+        JsonArray currentList = getCurrentPositionOnList();
 
         int currentPositionOnList = 0;
 
@@ -295,7 +304,7 @@ public class PlayerService extends Service {
         }
 
         PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
-        PlayerService.play();
+        play();
 
         PlayerService.updatePlayerFragment = true;
 
@@ -316,26 +325,7 @@ public class PlayerService extends Service {
 
         //Precisa de uma forma que seja carregado quando houver mudança na lista
         //Por enquanto carrega sempre que troca de música
-        DataBaseCurrentList dataBaseCurrentList;
-
-        dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
-        Cursor cursor = dataBaseCurrentList.getData();
-
-        JsonArray currentList = new JsonArray();
-        if (cursor != null) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.addProperty("id", cursor.getString(0));
-                jsonObject.addProperty("uri", cursor.getString(1));
-                jsonObject.addProperty("filename", cursor.getString(2));
-                jsonObject.addProperty("artist", cursor.getString(3));
-                jsonObject.addProperty("title", cursor.getString(4));
-
-                currentList.add(jsonObject);
-                cursor.moveToNext();
-            }
-        }
+        JsonArray currentList = getCurrentPositionOnList();
 
         int currentPositionOnList = 0;
 
@@ -353,7 +343,7 @@ public class PlayerService extends Service {
         }
 
         PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
-        PlayerService.play();
+        play();
 
         PlayerService.updatePlayerFragment = true;
 

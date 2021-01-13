@@ -179,15 +179,25 @@ public class ListFragment extends Fragment {
                 @Override
                 public void onItemClick(View view, int position) {
                     try {
-                        JsonObject jsonObject;
+
+                        PlayerService playerService = new PlayerService();
                         switch (listType){
                             case 3:
                                 if(externalMusicListAdapter == null) return;
-                                jsonObject = externalMusicListAdapter.getItem(position);
-                                jsonObject.addProperty("uri",URI);
-                                jsonObject.remove("art");
-                                PlayerService.setMusic(jsonObject);
-                                PlayerService.play();
+                                JsonObject adapterJsonObject = externalMusicListAdapter.getItem(position);
+
+                                String fileName = adapterJsonObject.get("filename").getAsString();
+                                String title = adapterJsonObject.get("title").getAsString();
+                                String artist = adapterJsonObject.get("artist").getAsString();
+
+                                JsonObject newJsonObject = new JsonObject();
+                                newJsonObject.addProperty("filename", fileName);
+                                newJsonObject.addProperty("title", title);
+                                newJsonObject.addProperty("artist", artist);
+                                newJsonObject.addProperty("uri",URI);
+
+                                PlayerService.setMusic(newJsonObject);
+                                playerService.play();
                                 main.SavePreferences();
 
                                 dataBaseCurrentList.dropTable();
@@ -203,9 +213,8 @@ public class ListFragment extends Fragment {
                                 break;
                             case 5:
                                 if (currentMusicListAdapter == null) return;
-                                jsonObject = currentMusicListAdapter.getItem(position);
-                                PlayerService.setMusic(jsonObject);
-                                PlayerService.play();
+                                PlayerService.setMusic(currentMusicListAdapter.getItem(position));
+                                playerService.play();
                                 main.SavePreferences();
 
                                 dataBaseCurrentList.dropTable();
@@ -377,40 +386,43 @@ public class ListFragment extends Fragment {
     }
 
     private void loadCurrentList(boolean isFavorite){
-        Cursor cursor;
-        if(isFavorite){
-            cursor = dataBaseFavorite.getData();
-        }else {
-            dataBaseCurrentList = new DataBaseCurrentList(main);
-            dataBaseCurrentList.createTable();
-            cursor = dataBaseCurrentList.getData();
-        }
-
-        currentList = new JsonArray();
-        if(cursor!=null ) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.addProperty("id", cursor.getString(0));
-                jsonObject.addProperty("uri", cursor.getString(1));
-                jsonObject.addProperty("filename", cursor.getString(2));
-                jsonObject.addProperty("artist", cursor.getString(3));
-                jsonObject.addProperty("title", cursor.getString(4));
-                jsonObject.addProperty("art", cursor.getString(5));
-
-                currentList.add(jsonObject);
-                cursor.moveToNext();
+        try {
+            Cursor cursor;
+            if (isFavorite) {
+                cursor = dataBaseFavorite.getData();
+            } else {
+                dataBaseCurrentList = new DataBaseCurrentList(main);
+                dataBaseCurrentList.createTable();
+                cursor = dataBaseCurrentList.getData();
             }
+
+            currentList = new JsonArray();
+            if (cursor != null) {
+                cursor.moveToFirst();
+                while (!cursor.isAfterLast()) {
+                    JsonObject jsonObject = new JsonObject();
+                    jsonObject.addProperty("id", cursor.getString(0));
+                    jsonObject.addProperty("uri", cursor.getString(1));
+                    jsonObject.addProperty("filename", cursor.getString(2));
+                    jsonObject.addProperty("artist", cursor.getString(3));
+                    jsonObject.addProperty("title", cursor.getString(4));
+                    jsonObject.addProperty("art", cursor.getString(5));
+
+                    currentList.add(jsonObject);
+                    cursor.moveToNext();
+                }
+            }
+
+            RecyclerView.LayoutManager layoutManager;
+            recyclerView.setHasFixedSize(true);
+            layoutManager = new LinearLayoutManager(main);
+            recyclerView.setLayoutManager(layoutManager);
+
+            currentMusicListAdapter = new CurrentMusicListAdapter(currentList, main, R_ID);
+            recyclerView.setAdapter(currentMusicListAdapter);
+        }catch (Exception e){
+            Handler.ShowSnack("Houve um erro","ListFragment.loadCurrentList: " + e.getMessage(), main, R_ID);
         }
-
-        RecyclerView.LayoutManager layoutManager;
-        recyclerView.setHasFixedSize(true);
-        layoutManager = new LinearLayoutManager(main);
-        recyclerView.setLayoutManager(layoutManager);
-
-        currentMusicListAdapter = new CurrentMusicListAdapter(currentList, main, R_ID);
-        recyclerView.setAdapter(currentMusicListAdapter);
-
     }
 
     private void insertCurrentList(String URI, JsonArray jsonArray){

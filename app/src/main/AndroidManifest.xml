@@ -3,6 +3,7 @@
     package="com.rocklinker">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" android:protectionLevel="signature|privileged" />
 
     <application
         android:allowBackup="true"

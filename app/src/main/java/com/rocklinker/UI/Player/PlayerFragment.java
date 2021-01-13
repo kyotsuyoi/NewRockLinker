@@ -175,7 +175,10 @@ public class PlayerFragment extends Fragment {
         setFavorite();
 
         buttonPlay.setOnClickListener(v->{
-            boolean isPlaying = PlayerService.play();
+
+            PlayerService playerService = new PlayerService();
+            boolean isPlaying = playerService.play();
+
             if(!isPlaying){
                 buttonPlay.setBackground(ResourcesCompat.getDrawable(
                         getResources(),
@@ -334,7 +337,8 @@ public class PlayerFragment extends Fragment {
         setMusicInformation();
 
         if(isPlaying){
-            PlayerService.play();
+            PlayerService playerService = new PlayerService();
+            playerService.play();
         }
 
         setFavorite();
@@ -436,24 +440,28 @@ public class PlayerFragment extends Fragment {
     }
 
     private void loadCurrentList(){
-        dataBaseCurrentList = new DataBaseCurrentList(main);
-        dataBaseCurrentList.createTable();
-        Cursor cursor = dataBaseCurrentList.getData();
+        try {
+            dataBaseCurrentList = new DataBaseCurrentList(main);
+            dataBaseCurrentList.createTable();
+            Cursor cursor = dataBaseCurrentList.getData();
 
-        currentList = new JsonArray();
-        if(cursor!=null) {
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.addProperty("id", cursor.getString(0));
-                jsonObject.addProperty("uri", cursor.getString(1));
-                jsonObject.addProperty("filename", cursor.getString(2));
-                jsonObject.addProperty("artist", cursor.getString(3));
-                jsonObject.addProperty("title", cursor.getString(4));
+            currentList = new JsonArray();
+            if (cursor != null) {
+                cursor.moveToFirst();
+                while (!cursor.isAfterLast()) {
+                    JsonObject jsonObject = new JsonObject();
+                    jsonObject.addProperty("id", cursor.getString(0));
+                    jsonObject.addProperty("uri", cursor.getString(1));
+                    jsonObject.addProperty("filename", cursor.getString(2));
+                    jsonObject.addProperty("artist", cursor.getString(3));
+                    jsonObject.addProperty("title", cursor.getString(4));
 
-                currentList.add(jsonObject);
-                cursor.moveToNext();
+                    currentList.add(jsonObject);
+                    cursor.moveToNext();
+                }
             }
+        }catch (Exception e){
+            Handler.ShowSnack("Houve um erro","PlayerFragment.loadCurrentList: " + e.getMessage(), main, R_ID);
         }
     }
 

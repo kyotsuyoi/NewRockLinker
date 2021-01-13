@@ -178,7 +178,11 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
                             assert jsonObject != null;
                             JsonArray localJsonArray = jsonObject.get("data").getAsJsonArray();
 
-                            imageView.setImageBitmap(Handler.ImageDecode(localJsonArray.get(0).getAsJsonObject().get("art").getAsString()));
+                            if(localJsonArray.get(0).getAsJsonObject().get("art") == JsonNull.INSTANCE)return;
+
+                            String artString = localJsonArray.get(0).getAsJsonObject().get("art").getAsString();
+
+                            imageView.setImageBitmap(Handler.ImageDecode(artString));
 
                             JsonObject newJsonObject = filteredJsonArray.get(position).getAsJsonObject();
                             newJsonObject.addProperty("art",localJsonArray.get(0).getAsJsonObject().get("art").getAsString());
