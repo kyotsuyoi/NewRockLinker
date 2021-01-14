@@ -160,7 +160,9 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
                 }
             }
 
-            if(jsonArray.get(pos).getAsJsonObject().has("art")){
+            if(jsonArray.get(pos).getAsJsonObject().has("art")
+                    && jsonArray.get(pos).getAsJsonObject().get("art") != JsonNull.INSTANCE){
+
                 imageView.setImageBitmap(Handler.ImageDecode(
                         jsonArray.get(pos).getAsJsonObject().get("art").getAsString()
                 ));

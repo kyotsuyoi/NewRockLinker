@@ -167,6 +167,8 @@ public class ListFragment extends Fragment {
                     listType = 4;
                     if (externalArtistListAdapter == null) return;
                     recyclerView.setAdapter(externalArtistListAdapter);
+                    int lastPosition = externalArtistListAdapter.getLastPosition();
+                    recyclerView.scrollToPosition(lastPosition);
                     break;
             }
         });
@@ -210,6 +212,7 @@ public class ListFragment extends Fragment {
                                 listType = 3;
                                 if (externalArtistListAdapter == null) return;
                                 getExternalMusicList(externalArtistListAdapter.getArtistName(position));
+                                externalArtistListAdapter.setLastPosition(position);
                                 break;
                             case 5:
                                 if (currentMusicListAdapter == null) return;
@@ -503,7 +506,10 @@ public class ListFragment extends Fragment {
                 String filename = jsonObject.get("filename").getAsString();
                 String artist = jsonObject.get("artist").getAsString();
                 String title = jsonObject.get("title").getAsString();
-                String art = jsonObject.get("art").getAsString();
+                String art = "";
+                if(jsonObject.has("art") && jsonObject.get("art") != JsonNull.INSTANCE) {
+                    art = jsonObject.get("art").getAsString();
+                }
 
                 int ID = dataBaseFavorite.getID(filename);
                 if(ID != 0){

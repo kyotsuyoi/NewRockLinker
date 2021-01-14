@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.google.gson.JsonObject;
+import com.rocklinker.DAO.DataBaseCurrentList;
 import com.rocklinker.MainActivity;
 import com.rocklinker.R;
 import com.rocklinker.Services.NotificationActionService;
@@ -44,9 +45,12 @@ public class PlayerNotification {
                 musicInfo.addProperty("title", "Desconhecido");
                 musicInfo.addProperty("artist", "Desconhecido");
             }else{
-                /*if(MainActivity.musicInfo.has("art")) {
-                    art = Handler.ImageDecode(MainActivity.musicInfo.get("art").getAsString());
-                }*/
+                DataBaseCurrentList dataBaseCurrentList = new DataBaseCurrentList(context);
+                dataBaseCurrentList.createTable();
+                String artString = dataBaseCurrentList.getArt(musicInfo.get("filename").getAsString());
+                if(!artString.equals("")) {
+                    art = Handler.ImageDecode(artString);
+                }
             }
 
             int play = R.drawable.ic_play_arrow_24;

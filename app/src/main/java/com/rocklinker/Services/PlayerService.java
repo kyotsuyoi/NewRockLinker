@@ -39,7 +39,7 @@ public class PlayerService extends Service {
 
     private static MediaPlayer mediaPlayer;
     private static JsonObject fileInformation;
-    private static Context context;
+    private Context context;
     private final Handler myHandler = new Handler();
     private static String repeat = "N";
     private static boolean shuffle = false;
@@ -134,6 +134,7 @@ public class PlayerService extends Service {
             }
             PlayerNotification.createNotification(context);
         }catch (Exception e){
+            Log.e("ERROR (PlayerNotification.forcePause())",e.getMessage());
         }
     }
 
@@ -248,33 +249,37 @@ public class PlayerService extends Service {
 
         @SuppressLint("DefaultLocale")
         public void run() {
-            if(PlayerService.getFileName() != null && created && mediaPlayer.isPlaying()) {
 
-                try{
-                    switch (repeat) {
-                        case "N":
-                            if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
-                                mediaPlayer.seekTo(0);
-                                mediaPlayer.pause();
-                            }
-                            break;
-                        case "1":
-                            if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
-                                mediaPlayer.seekTo(0);
-                            }
-                            break;
-                        case "A":
-                            if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
-                                next();
-                            }
-                            break;
+            try {
+                if(PlayerService.getFileName() != null && created && mediaPlayer != null) {
+
+                    if (mediaPlayer.isPlaying()) {
+                        switch (repeat) {
+                            case "N":
+                                if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
+                                    mediaPlayer.seekTo(0);
+                                    mediaPlayer.pause();
+                                }
+                                break;
+                            case "1":
+                                if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
+                                    mediaPlayer.seekTo(0);
+                                }
+                                break;
+                            case "A":
+                                if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
+                                    next();
+                                }
+                                break;
+                        }
                     }
-
-                }catch (Exception e){
-                    //Existe um erro em
-                    //if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
-                    //por algum motivo em alguns momentos não consegue ler o estado do mediaPlayer
                 }
+
+            } catch (Exception e) {
+                //Existe um erro em
+                //if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
+                //por algum motivo em alguns momentos não consegue ler o estado do mediaPlayer
+                Log.e("ERROR (PlayerService.Runnable.run())",e.getMessage());
             }
 
             myHandler.postDelayed(this, 100);

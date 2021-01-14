@@ -25,6 +25,8 @@ public class ExternalArtistListAdapter extends RecyclerView.Adapter <ExternalArt
     private final JsonArray jsonArray;
     private JsonArray filteredJsonArray;
 
+    private int lastPosition = 0;
+
     public ExternalArtistListAdapter(JsonArray jsonArray, Activity activity, int R_ID) {
         this.jsonArray = jsonArray;
         this.filteredJsonArray = jsonArray;
@@ -132,4 +134,11 @@ public class ExternalArtistListAdapter extends RecyclerView.Adapter <ExternalArt
         filteredJsonArray = jsonArray;
     }
 
+    public int getLastPosition(){
+        return lastPosition;
+    }
+
+    public void setLastPosition(int lastPosition){
+        this.lastPosition = lastPosition;
+    }
 }
