@@ -32,6 +32,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.rocklinker.Adapters.ExternalMusicListAdapter;
 import com.rocklinker.Common.ApiClient;
 import com.rocklinker.Common.PlayerInterface;
 import com.rocklinker.DAO.DataBase;
@@ -437,7 +438,9 @@ public class PlayerFragment extends Fragment {
         }
     }
 
-    private JsonObject getMusicMeta(){
+    //Refatorar
+    //Metodo repetido em ExternalMusicListAdapter e Player Notification
+    private void getMusicMeta(){
 
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         mediaMetadataRetriever.setDataSource(main.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/" + PlayerService.getFileName());
@@ -457,7 +460,6 @@ public class PlayerFragment extends Fragment {
             textViewArtist.setText(filename);
             textViewTitle.setText(unknown);
         }
-        return new JsonObject();
     }
 
     private void loadCurrentList(){

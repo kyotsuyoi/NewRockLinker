@@ -5,8 +5,13 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.os.Build;
+import android.os.Environment;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -17,6 +22,8 @@ import com.rocklinker.MainActivity;
 import com.rocklinker.R;
 import com.rocklinker.Services.NotificationActionService;
 import com.rocklinker.Services.PlayerService;
+
+import java.io.File;
 
 public class PlayerNotification {
 
@@ -40,16 +47,24 @@ public class PlayerNotification {
 
             Bitmap art = null;
             JsonObject musicInfo = PlayerService.getFileInformation();
+
             if(musicInfo == null){
                 musicInfo = new JsonObject();
                 musicInfo.addProperty("title", "Desconhecido");
                 musicInfo.addProperty("artist", "Desconhecido");
             }else{
-                DataBaseCurrentList dataBaseCurrentList = new DataBaseCurrentList(context);
-                dataBaseCurrentList.createTable();
-                String artString = dataBaseCurrentList.getArt(musicInfo.get("filename").getAsString());
-                if(!artString.equals("")) {
-                    art = Handler.ImageDecode(artString);
+                String path = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getPath();
+                File file = new File(path, musicInfo.get("filename").getAsString());
+
+                if(file.exists()){
+                    art = getMusicMeta(context, musicInfo.get("filename").getAsString());
+                }else{
+                    DataBaseCurrentList dataBaseCurrentList = new DataBaseCurrentList(context);
+                    dataBaseCurrentList.createTable();
+                    String artString = dataBaseCurrentList.getArt(musicInfo.get("filename").getAsString());
+                    if(!artString.equals("")) {
+                        art = Handler.ImageDecode(artString);
+                    }
                 }
             }
 
@@ -100,4 +115,22 @@ public class PlayerNotification {
             notificationManagerCompat.notify(1, notification);
         }
     }
+
+    //Refatorar
+    //Metodo com caracteristica repetida em PlayerFragment e ExternalMusicListAdapter
+    private static Bitmap getMusicMeta(Context context, String fileName){
+
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/" + fileName);
+
+        try {
+            byte[] art = mediaMetadataRetriever.getEmbeddedPicture();
+            assert art != null;
+            return BitmapFactory.decodeByteArray(art, 0, art.length);
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 }

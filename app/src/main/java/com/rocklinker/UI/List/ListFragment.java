@@ -85,6 +85,9 @@ public class ListFragment extends Fragment {
     //Type 4 to external music artist
     //Type 5 to current music list
 
+    //To
+    private int currentPlayingType = 0;
+
     private String path;
     private final String URI = ApiClient.BASE_URL+"songs/";
 
@@ -187,7 +190,13 @@ public class ListFragment extends Fragment {
                     recyclerView.setAdapter(externalArtistListAdapter);
                     int lastPosition = externalArtistListAdapter.getLastPosition();
                     recyclerView.scrollToPosition(lastPosition);
+
+                    animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.move);
+                    buttonBack.startAnimation(animationOutIn);
                     break;
+                default:
+                    animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.move_block);
+                    buttonBack.startAnimation(animationOutIn);
             }
         });
     }
@@ -220,9 +229,12 @@ public class ListFragment extends Fragment {
                                 playerService.play();
                                 main.SavePreferences();
 
-                                dataBaseCurrentList.dropTable();
-                                dataBaseCurrentList.createTable();
-                                insertCurrentList(URI, externalMusicListAdapter.getItems());
+                                if(currentPlayingType != 3) {
+                                    dataBaseCurrentList.dropTable();
+                                    dataBaseCurrentList.createTable();
+                                    insertCurrentList(URI, externalMusicListAdapter.getItems());
+                                    currentPlayingType=3;
+                                }
 
                                 externalMusicListAdapter.notifyDataSetChanged();
                                 break;
@@ -249,9 +261,12 @@ public class ListFragment extends Fragment {
                                 playerService.play();
                                 main.SavePreferences();
 
-                                dataBaseCurrentList.dropTable();
-                                dataBaseCurrentList.createTable();
-                                insertCurrentList(URI, currentMusicListAdapter.getItems());
+                                if(currentPlayingType != 5) {
+                                    dataBaseCurrentList.dropTable();
+                                    dataBaseCurrentList.createTable();
+                                    insertCurrentList(URI, currentMusicListAdapter.getItems());
+                                    currentPlayingType=4;
+                                }
 
                                 currentMusicListAdapter.notifyDataSetChanged();
                                 break;

@@ -6,19 +6,13 @@
     <translate
         android:duration="200"
         android:fromXDelta="0%p"
-        android:toXDelta="-90%p"
+        android:toXDelta="-20%p"
         android:startOffset="0" />
-
-    <translate
-        android:duration="1"
-        android:fromXDelta="0%p"
-        android:toXDelta="180%p"
-        android:startOffset="200" />
 
     <translate
         android:duration="200"
         android:fromXDelta="0%p"
-        android:toXDelta="-90%p"
-        android:startOffset="400" />
-
+        android:toXDelta="20%p"
+        android:startOffset="200" />
+    
 </set>

@@ -98,7 +98,7 @@ public class PlayerService extends Service {
             setMusic=true;
         }catch (Exception e){
             //mediaPlayer.release();
-            //Log.e("Error on PlayerService.setMusic",e.getMessage());
+            Log.e("Error on PlayerService.setMusic",e.getMessage());
         }
     }
 

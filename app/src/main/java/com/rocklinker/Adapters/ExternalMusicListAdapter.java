@@ -1,7 +1,11 @@
 package com.rocklinker.Adapters;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.os.Build;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,7 +37,7 @@ import retrofit2.Response;
 
 public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusicListAdapter.ViewHolder> {
 
-    private final List<File> files;
+    //private final List<File> files;
     private final Activity activity;
     private final com.rocklinker.Common.Handler Handler = new com.rocklinker.Common.Handler();
     private final int R_ID;
@@ -46,7 +50,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
     public ExternalMusicListAdapter(List<File> files, JsonArray jsonArray, Activity activity, int R_ID) {
         this.jsonArray = jsonArray;
         this.filteredJsonArray = jsonArray;
-        this.files = files;
+        //this.files = files;
         this.activity = activity;
         this.R_ID = R_ID;
     }
@@ -63,6 +67,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
             viewHolder.imageViewArt.setImageDrawable(null);
             viewHolder.textViewMusicName.setText("");
             viewHolder.textViewArtistName.setText("");
+            viewHolder.buttonViewDownload.setVisibility(View.VISIBLE);
 
             String filename = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
             String title = null;
@@ -84,8 +89,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
             //>>>Refatorar<<<
             //Algoritimo que deve ser feito somente uma vez e
             //ir marcando as musicas encontradas
-            viewHolder.buttonViewDownload.setVisibility(View.VISIBLE);
-            if(files!=null) {
+            /*if(files!=null) {
                 for (int i = 0; i < files.size(); i++) {
                     String Name = files.get(i).getName();
                     if (Name.equalsIgnoreCase(filename)) {
@@ -93,6 +97,22 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
                         i = files.size();
                     }
                 }
+            }*/
+
+            File file = new File(
+                    activity.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath(),
+                    filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString()
+            );
+
+            if (file.exists()) {
+                getMusicMeta(
+                        viewHolder.imageViewArt,
+                        viewHolder.textViewMusicName,
+                        viewHolder.textViewArtistName,
+                        filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString()
+                );
+                viewHolder.buttonViewDownload.setVisibility(View.INVISIBLE);
+                return;
             }
 
             viewHolder.textViewArtistName.setText(artist);
@@ -135,7 +155,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
 
     public int getItemCount() {
         if(filteredJsonArray==null) {
-            return files.size();
+            return jsonArray.size();
         }
         return filteredJsonArray.size();
     }
@@ -261,35 +281,28 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
         filteredJsonArray = jsonArray;
     }
 
-    /*public JsonObject getDataInfoByFilename(String filename){
-        for (int i = 0; i < filteredJsonArray.size(); i++) {
-            if(filteredJsonArray.get(i).getAsJsonObject().get("filename").getAsString().equals(filename)){
-                return filteredJsonArray.get(i).getAsJsonObject();
-            }
-        }
-        return new JsonObject();
-    }
+    //Refatorar
+    //Metodo repetido em PlayerFragment e PlayerNotification
+    private void getMusicMeta(ImageView imageView, TextView textViewArtist, TextView textViewTitle, String fileName){
 
-    public String getFileName(int position){
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(activity.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/" + fileName);
+
         try {
-            return filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
-        }catch (Exception e){
-            Handler.ShowSnack("Houve um erro", "ExternalMusicListAdapter.getFileName: " + e.getMessage(), activity, R_ID);
-            return "Unknown";
+            byte[] art = mediaMetadataRetriever.getEmbeddedPicture();
+            assert art != null;
+            Bitmap songImage = BitmapFactory.decodeByteArray(art, 0, art.length);
+            imageView.setImageBitmap(songImage);
+
+            textViewArtist.setText(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST));
+            textViewTitle.setText(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE));
+        } catch (Exception e) {
+            imageView.setImageBitmap(null);
+            String unknown = "Arquivo sem informações";
+            String filename = PlayerService.getFileName().replace("/", "").replace(".mp3", "");
+            textViewArtist.setText(filename);
+            textViewTitle.setText(unknown);
         }
     }
-
-    public void getInternalMusicList(){
-        try {
-            File dir = new File(Objects.requireNonNull(activity.getExternalFilesDir(Environment.DIRECTORY_MUSIC)).getAbsolutePath());
-
-            files.clear();
-            files.addAll(Arrays.asList(Objects.requireNonNull(dir.listFiles())));
-
-            Collections.sort(files);
-        }catch (Exception e){
-            Handler.ShowSnack("Houve um erro","ExternalMusicListAdapter.GetInternalMusicList: " + e.getMessage(), activity, R_ID);
-        }
-    }*/
 
 }
