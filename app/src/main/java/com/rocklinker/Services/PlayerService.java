@@ -19,6 +19,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -39,7 +40,8 @@ public class PlayerService extends Service {
 
     private static MediaPlayer mediaPlayer;
     private static JsonObject fileInformation;
-    private Context context;
+    @SuppressLint("StaticFieldLeak")
+    private static Context context;
     private final Handler myHandler = new Handler();
     private static String repeat = "N";
     private static boolean shuffle = false;
@@ -101,11 +103,11 @@ public class PlayerService extends Service {
     }
 
     public boolean play(){
+        boolean isPLaying = false;
         if(mediaPlayer == null){
             return false;
         }
         try {
-
             if (mediaPlayer.isPlaying()) {
                 cur = mediaPlayer.getCurrentPosition();
                 mediaPlayer.pause();
@@ -113,13 +115,15 @@ public class PlayerService extends Service {
                 mediaPlayer.seekTo((int)cur);
                 mediaPlayer.start();
             }
-            PlayerNotification.createNotification(context);
+            isPLaying = mediaPlayer.isPlaying();
 
             updateListFragment = true;
+            PlayerNotification.createNotification(context);
 
-            return mediaPlayer.isPlaying();
+            return isPLaying;
         }catch (Exception e){
-            return false;
+            Log.e("ERROR (PlayerService.play())",e.getMessage());
+            return isPLaying;
         }
     }
 

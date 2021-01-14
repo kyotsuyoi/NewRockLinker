@@ -6,6 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -185,7 +188,6 @@ public class PlayerFragment extends Fragment {
                         R.drawable.ic_play_arrow_24,
                         getActivity().getTheme()
                 ));
-
             }else{
                 buttonPlay.setBackground(ResourcesCompat.getDrawable(
                         getResources(),
@@ -425,7 +427,7 @@ public class PlayerFragment extends Fragment {
             );
 
             if (file.exists()) {
-                //getMusicMeta();
+                getMusicMeta();
                 return;
             }
 
@@ -436,6 +438,25 @@ public class PlayerFragment extends Fragment {
     }
 
     private JsonObject getMusicMeta(){
+
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(main.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/" + PlayerService.getFileName());
+
+        try {
+            byte[] art = mediaMetadataRetriever.getEmbeddedPicture();
+            assert art != null;
+            Bitmap songImage = BitmapFactory.decodeByteArray(art, 0, art.length);
+            imageViewArt.setImageBitmap(songImage);
+
+            textViewArtist.setText(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST));
+            textViewTitle.setText(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE));
+        } catch (Exception e) {
+            imageViewArt.setImageBitmap(null);
+            String unknown = "Arquivo sem informações";
+            String filename = PlayerService.getFileName().replace("/", "").replace(".mp3", "");
+            textViewArtist.setText(filename);
+            textViewTitle.setText(unknown);
+        }
         return new JsonObject();
     }
 

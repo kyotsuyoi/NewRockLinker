@@ -57,6 +57,10 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
         try {
 
+            if (position == 2){
+                position = 2;
+            }
+
             viewHolder.buttonPlaying.setVisibility(View.INVISIBLE);
             viewHolder.gifImageView.setVisibility(View.INVISIBLE);
 
@@ -90,7 +94,7 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             if(!isBindViewHolderError) {
                 Handler.ShowSnack(
                         "Houve um erro",
-                        "CurrentMusicListAdapter.onBindViewHolder: " + e.getMessage(),
+                        "CurrentMusicListAdapter.onBindViewHolder: " + e.getMessage() + " on position "+position,
                         activity,
                         R_ID
                 );
@@ -130,46 +134,56 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
 
     private void GetMusicInfo(ImageView imageViewArt, TextView textViewArtistName, TextView textViewMusicName, int position){
 
-        String fileName = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
-        String artist = filteredJsonArray.get(position).getAsJsonObject().get("artist").getAsString();
-        String title = filteredJsonArray.get(position).getAsJsonObject().get("title").getAsString();
+        try {
+            String fileName = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
+            String artist = filteredJsonArray.get(position).getAsJsonObject().get("artist").getAsString();
+            String title = filteredJsonArray.get(position).getAsJsonObject().get("title").getAsString();
 
-        String path = activity.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getPath();
-        File file = new File(path,fileName);
+            String path = activity.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getPath();
+            File file = new File(path, fileName);
 
-        if(!file.exists()){
-            imageViewArt.setImageBitmap(null);
-            textViewArtistName.setText(artist);
-            textViewMusicName.setText(title);
+            if (!file.exists()) {
+                imageViewArt.setImageBitmap(null);
+                textViewArtistName.setText(artist);
+                textViewMusicName.setText(title);
 
-            if(filteredJsonArray.get(position).getAsJsonObject().has("art")
-                    && filteredJsonArray.get(position).getAsJsonObject().get("art") != null) {
-                String art = filteredJsonArray.get(position).getAsJsonObject().get("art").getAsString();
-                imageViewArt.setImageBitmap(Handler.ImageDecode(art));
+                if (filteredJsonArray.get(position).getAsJsonObject().has("art")
+                        && filteredJsonArray.get(position).getAsJsonObject().get("art") != null) {
+                    String art = filteredJsonArray.get(position).getAsJsonObject().get("art").getAsString();
+                    imageViewArt.setImageBitmap(Handler.ImageDecode(art));
+                    return;
+                }
+
+                getMusicArt(imageViewArt, fileName, position);
                 return;
             }
 
-            getMusicArt(imageViewArt, fileName, position);
-            return;
-        }
+            fileName = path + "/" + fileName;
 
-        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(fileName);
+            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            mediaMetadataRetriever.setDataSource(fileName);
 
-        try {
-            byte[] art = mediaMetadataRetriever.getEmbeddedPicture();
-            assert art != null;
-            Bitmap songImage = BitmapFactory.decodeByteArray(art, 0, art.length);
-            imageViewArt.setImageBitmap(songImage);
+            try {
+                byte[] art = mediaMetadataRetriever.getEmbeddedPicture();
+                assert art != null;
+                Bitmap songImage = BitmapFactory.decodeByteArray(art, 0, art.length);
+                imageViewArt.setImageBitmap(songImage);
 
-            textViewArtistName.setText(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST));
-            textViewMusicName.setText(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE));
-        } catch (Exception e) {
-            imageViewArt.setImageBitmap(null);
-            String unknown = "Arquivo sem informações";
-            String filename = fileName.replace("/","").replace(".mp3","");
-            textViewArtistName.setText(filename);
-            textViewMusicName.setText(unknown);
+                textViewArtistName.setText(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST));
+                textViewMusicName.setText(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE));
+            } catch (Exception e) {
+                imageViewArt.setImageBitmap(null);
+                String unknown = "Arquivo sem informações";
+                String filename = fileName.replace("/", "").replace(".mp3", "");
+                textViewArtistName.setText(filename);
+                textViewMusicName.setText(unknown);
+            }
+        }catch (Exception e){
+            Handler.ShowSnack(
+                    "Houve um erro",
+                    "CurrentMusicListAdapter.GetMusicInfo: " + e.getMessage() + " on position "+position,
+                    activity,R_ID
+            );
         }
     }
 

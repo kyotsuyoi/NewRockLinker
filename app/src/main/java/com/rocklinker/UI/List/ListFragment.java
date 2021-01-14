@@ -2,9 +2,15 @@ package com.rocklinker.UI.List;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -52,6 +58,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static android.content.Context.DOWNLOAD_SERVICE;
+
 public class ListFragment extends Fragment {
 
     private MainActivity main;
@@ -88,6 +96,8 @@ public class ListFragment extends Fragment {
 
     private final android.os.Handler myHandler = new Handler();
 
+    private long downloadID;
+
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_list, container, false);
         recyclerView = root.findViewById(R.id.fragmentList_RecyclerView);
@@ -116,6 +126,8 @@ public class ListFragment extends Fragment {
 
             dataBaseFavorite = new DataBaseFavorite(main);
             dataBaseFavorite.createTable();
+
+            main.registerReceiver(onDownloadComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","ListFragment.onCreateView: " + e.getMessage(), main, R_ID);
         }
@@ -133,6 +145,12 @@ public class ListFragment extends Fragment {
     public void onPause() {
         myHandler.removeCallbacks(UpdateCurrentTrack);
         super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        main.unregisterReceiver(onDownloadComplete);
+        super.onDestroy();
     }
 
     private void setButtons(){
@@ -216,7 +234,18 @@ public class ListFragment extends Fragment {
                                 break;
                             case 5:
                                 if (currentMusicListAdapter == null) return;
-                                PlayerService.setMusic(currentMusicListAdapter.getItem(position));
+                                JsonObject jsonObject = currentMusicListAdapter.getItem(position);
+
+                                String path = main.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getPath();
+                                File file = new File(path, jsonObject.get("filename").getAsString());
+
+                                if(file.exists()){
+                                    jsonObject.addProperty("uri",path+"/");
+                                }else{
+                                    jsonObject.addProperty("uri",ApiClient.BASE_URL+"songs/");
+                                }
+
+                                PlayerService.setMusic(jsonObject);
                                 playerService.play();
                                 main.SavePreferences();
 
@@ -481,10 +510,9 @@ public class ListFragment extends Fragment {
                 buttonDownload.setVisibility(View.INVISIBLE);
             }else{
                 buttonDownload.setOnClickListener(v->{
-                    Handler.ShowSnack("Indisponível",null, main, R_ID);
-                    /*beginDownload(jsonObject.get("filename").getAsString());
                     buttonDownload.setEnabled(false);
-                    buttonDownload.setVisibility(View.INVISIBLE);*/
+                    buttonDownload.setVisibility(View.INVISIBLE);
+                    beginDownload(jsonObject.get("filename").getAsString());
                 });
             }
 
@@ -553,5 +581,30 @@ public class ListFragment extends Fragment {
             myHandler.postDelayed(this, 100);
         }
     };
+
+    private final BroadcastReceiver onDownloadComplete = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+            if (downloadID == id) {
+                if(externalMusicListAdapter == null)return;
+                externalMusicListAdapter.notifyDataSetChanged();
+            }
+        }
+    };
+
+    private void beginDownload(String filename){
+        File file = new File(Objects.requireNonNull(main.getExternalFilesDir(Environment.DIRECTORY_MUSIC)).getAbsolutePath(),filename);
+        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(ApiClient.BASE_URL+"songs/"+filename))
+                .setTitle(filename)
+                .setDescription("Baixando")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+                .setDestinationUri(Uri.fromFile(file))
+                .setRequiresCharging(false)
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(true);
+
+        DownloadManager downloadManager= (DownloadManager) main.getSystemService(DOWNLOAD_SERVICE);
+        downloadID = downloadManager.enqueue(request);
+    }
 
 }
