@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.Filter;
 import android.widget.ImageView;
@@ -21,6 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.rocklinker.Common.ApiClient;
 import com.rocklinker.Common.PlayerInterface;
+import com.rocklinker.DAO.DataBaseFavorite;
 import com.rocklinker.R;
 import com.rocklinker.Services.PlayerService;
 
@@ -40,6 +42,7 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
     private final PlayerInterface musicListInterface = ApiClient.getApiClient().create(PlayerInterface.class);
     private final int R_ID;
     private boolean isBindViewHolderError;
+    private DataBaseFavorite dataBaseFavorite;
 
     public CurrentMusicListAdapter(JsonArray jsonArray, Activity activity, int R_ID) {
         this.jsonArray = jsonArray;
@@ -51,18 +54,17 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
     @NonNull
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int ViewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_internal_music_list,parent,false);
+        dataBaseFavorite = new DataBaseFavorite(activity);
+        dataBaseFavorite.createTable();
         return new ViewHolder(view);
     }
 
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
         try {
 
-            if (position == 2){
-                position = 2;
-            }
-
             viewHolder.buttonPlaying.setVisibility(View.INVISIBLE);
             viewHolder.gifImageView.setVisibility(View.INVISIBLE);
+            viewHolder.buttonDownload.setVisibility(View.INVISIBLE);
 
             GetMusicInfo(
                     viewHolder.imageViewArt,
@@ -72,6 +74,22 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             );
 
             String fileName = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
+
+            File file = new File(
+                    activity.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath(),
+                    fileName
+            );
+
+            if(!file.exists()){
+                viewHolder.buttonDownload.setVisibility(View.VISIBLE);
+            }
+
+            int fID = dataBaseFavorite.getID(fileName);
+            if(fID == 0){
+                viewHolder.buttonFavorite.setBackground(ResourcesCompat.getDrawable(activity.getResources(), R.drawable.ic_favorite_border_24, activity.getTheme()));
+            }else{
+                viewHolder.buttonFavorite.setBackground(ResourcesCompat.getDrawable(activity.getResources(), R.drawable.ic_favorite_24, activity.getTheme()));
+            }
 
             if(PlayerService.getFileInformation() == null){
                 return;
@@ -106,7 +124,7 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
     public static class ViewHolder extends RecyclerView.ViewHolder{
 
         ImageView imageViewArt;
-        Button buttonPlaying;
+        Button buttonPlaying, buttonDownload, buttonFavorite;
         TextView textViewArtistName, textViewMusicName;
         GifImageView gifImageView;
 
@@ -117,6 +135,9 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
             textViewMusicName = itemView.findViewById(R.id.itemInternalMusicList_TextView_MusicName);
             buttonPlaying = itemView.findViewById(R.id.itemInternalMusicList_Button_Playing);
             gifImageView = itemView.findViewById(R.id.itemInternalMusicList_ImageView_Gif);
+
+            buttonDownload = itemView.findViewById(R.id.itemInternalMusicList_Button_Download);
+            buttonFavorite = itemView.findViewById(R.id.itemInternalMusicList_Button_Favorite);
         }
     }
 

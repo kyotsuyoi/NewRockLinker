@@ -52,15 +52,36 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <Button
-                android:id="@+id/itemInternalMusicList_Button_Playing"
+                android:id="@+id/itemInternalMusicList_Button_Favorite"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_marginEnd="8dp"
+                android:background="@drawable/ic_favorite_24"
+                android:contentDescription="@string/todo"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/itemInternalMusicList_Button_Playing"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="16dp"
                 android:background="@drawable/ic_play_arrow_24"
-                android:contentDescription="@string/todo" />
+                android:contentDescription="@string/todo"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/itemInternalMusicList_Button_Favorite"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/itemInternalMusicList_Button_Download"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/ic_cloud_download_24"
+                android:contentDescription="@string/todo"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
             <pl.droidsonroids.gif.GifImageView
                 android:id="@+id/itemInternalMusicList_ImageView_Gif"

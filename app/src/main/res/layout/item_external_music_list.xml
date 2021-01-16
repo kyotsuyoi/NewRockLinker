@@ -61,6 +61,17 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
+            <Button
+                android:id="@+id/itemExternalMusicList_Button_Favorite"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/ic_favorite_24"
+                android:contentDescription="@string/todo"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
             <pl.droidsonroids.gif.GifImageView
                 android:id="@+id/itemExternalMusicList_ImageView_Gif"
                 android:layout_width="0dp"

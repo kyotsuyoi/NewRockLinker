@@ -202,6 +202,9 @@ public class PlayerFragment extends Fragment {
         });
 
         buttonNext.setOnClickListener(v->{
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+            buttonNext.startAnimation(animationOutIn);
+
             if(currentPositionOnList >= currentList.size()-1){
                 currentPositionOnList = 0;
             }else{
@@ -209,27 +212,25 @@ public class PlayerFragment extends Fragment {
             }
 
             changeMusic();
-
-            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
-            buttonNext.startAnimation(animationOutIn);
         });
 
         buttonPrevious.setOnClickListener(v -> {
-            if(PlayerService.getCurrentTime()>5000){
+
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+            buttonPrevious.startAnimation(animationOutIn);
+
+            if (PlayerService.getCurrentTime() > 5000) {
                 PlayerService.setSeekTo(0);
                 return;
             }
 
-            if(currentPositionOnList == 0){
-                currentPositionOnList = currentList.size()-1;
-            }else{
+            if (currentPositionOnList == 0) {
+                currentPositionOnList = currentList.size() - 1;
+            } else {
                 currentPositionOnList--;
             }
 
             changeMusic();
-
-            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
-            buttonPrevious.startAnimation(animationOutIn);
         });
 
         buttonRepeat.setOnClickListener(v -> {

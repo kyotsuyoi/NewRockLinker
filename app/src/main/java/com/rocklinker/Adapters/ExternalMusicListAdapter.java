@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.gson.JsonArray;
@@ -24,6 +25,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.rocklinker.Common.ApiClient;
 import com.rocklinker.Common.PlayerInterface;
+import com.rocklinker.DAO.DataBaseFavorite;
 import com.rocklinker.R;
 import com.rocklinker.Services.PlayerService;
 
@@ -47,6 +49,8 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
     private final JsonArray jsonArray;
     private JsonArray filteredJsonArray;
 
+    private DataBaseFavorite dataBaseFavorite;
+
     public ExternalMusicListAdapter(List<File> files, JsonArray jsonArray, Activity activity, int R_ID) {
         this.jsonArray = jsonArray;
         this.filteredJsonArray = jsonArray;
@@ -58,6 +62,8 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
     @NonNull
     public ViewHolder onCreateViewHolder(ViewGroup parent, int ViewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_external_music_list,parent,false);
+        dataBaseFavorite = new DataBaseFavorite(activity);
+        dataBaseFavorite.createTable();
         return new ViewHolder(view);
     }
 
@@ -69,7 +75,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
             viewHolder.textViewArtistName.setText("");
             viewHolder.buttonViewDownload.setVisibility(View.VISIBLE);
 
-            String filename = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
+            String fileName = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
             String title = null;
             String artist = null;
 
@@ -83,7 +89,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
 
             if(title == null && artist == null){
                 title = "Arquivo sem informações";
-                artist = filename;
+                artist = fileName;
             }
 
             //>>>Refatorar<<<
@@ -99,10 +105,27 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
                 }
             }*/
 
+            int fID = dataBaseFavorite.getID(fileName);
+            if(fID == 0){
+                //viewHolder.buttonViewFavorite.setVisibility(View.INVISIBLE);
+                viewHolder.buttonViewFavorite.setBackground(ResourcesCompat.getDrawable(activity.getResources(), R.drawable.ic_favorite_border_24, activity.getTheme()));
+            }else{
+                //viewHolder.buttonViewFavorite.setVisibility(View.VISIBLE);
+                viewHolder.buttonViewFavorite.setBackground(ResourcesCompat.getDrawable(activity.getResources(), R.drawable.ic_favorite_24, activity.getTheme()));
+            }
+
             File file = new File(
                     activity.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath(),
                     filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString()
             );
+
+            viewHolder.gifImageView.setVisibility(View.INVISIBLE);
+
+            if(PlayerService.getFileName() != null){
+                if(PlayerService.getFileName().equals(fileName) && PlayerService.isPlaying()){
+                    viewHolder.gifImageView.setVisibility(View.VISIBLE);
+                }
+            }
 
             if (file.exists()) {
                 getMusicMeta(
@@ -118,15 +141,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
             viewHolder.textViewArtistName.setText(artist);
             viewHolder.textViewMusicName.setText(title);
 
-            viewHolder.gifImageView.setVisibility(View.INVISIBLE);
-            String fileName = filteredJsonArray.get(position).getAsJsonObject().get("filename").getAsString();
-            if(PlayerService.getFileName() != null){
-                if(PlayerService.getFileName().equals(fileName) && PlayerService.isPlaying()){
-                    viewHolder.gifImageView.setVisibility(View.VISIBLE);
-                }
-            }
-
-            getMusicArt(viewHolder.imageViewArt, filename, position);
+            getMusicArt(viewHolder.imageViewArt, fileName, position);
 
         }catch (Exception e){
             if(!isBindViewHolderError) {
@@ -139,7 +154,7 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
     public static class ViewHolder extends RecyclerView.ViewHolder{
 
         ImageView imageViewArt;
-        Button buttonViewDownload;
+        Button buttonViewDownload, buttonViewFavorite;
         TextView textViewArtistName, textViewMusicName;
         GifImageView gifImageView;
 
@@ -150,6 +165,8 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
             textViewMusicName = itemView.findViewById(R.id.itemExternalMusicList_TextView_MusicName);
             buttonViewDownload = itemView.findViewById(R.id.itemExternalMusicList_Button_Download);
             gifImageView = itemView.findViewById(R.id.itemExternalMusicList_ImageView_Gif);
+
+            buttonViewFavorite = itemView.findViewById(R.id.itemExternalMusicList_Button_Favorite);
         }
     }
 

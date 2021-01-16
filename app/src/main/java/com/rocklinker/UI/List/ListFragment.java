@@ -240,9 +240,11 @@ public class ListFragment extends Fragment {
                                 break;
                             case 4:
                                 listType = 3;
+
                                 if (externalArtistListAdapter == null) return;
                                 getExternalMusicList(externalArtistListAdapter.getArtistName(position));
                                 externalArtistListAdapter.setLastPosition(position);
+
                                 break;
                             case 5:
                                 if (currentMusicListAdapter == null) return;
@@ -265,7 +267,7 @@ public class ListFragment extends Fragment {
                                     dataBaseCurrentList.dropTable();
                                     dataBaseCurrentList.createTable();
                                     insertCurrentList(URI, currentMusicListAdapter.getItems());
-                                    currentPlayingType=4;
+                                    currentPlayingType=5;
                                 }
 
                                 currentMusicListAdapter.notifyDataSetChanged();
@@ -281,11 +283,11 @@ public class ListFragment extends Fragment {
                     switch (listType){
                         case 3:
                             if(externalMusicListAdapter == null) return false;
-                            DialogMusicMenu(externalMusicListAdapter.getItem(position));
+                            DialogMusicMenu(externalMusicListAdapter.getItem(position), position);
                             break;
                         case 5:
                             if (currentMusicListAdapter == null) return false;
-                            DialogMusicMenu(currentMusicListAdapter.getItem(position));
+                            DialogMusicMenu(currentMusicListAdapter.getItem(position), position);
                             break;
                     }
                     return true;
@@ -490,7 +492,7 @@ public class ListFragment extends Fragment {
         }
     }
 
-    private void DialogMusicMenu(JsonObject jsonObject){
+    private void DialogMusicMenu(JsonObject jsonObject, int position){
         try {
             Dialog dialog = new Dialog(main);
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -559,15 +561,22 @@ public class ListFragment extends Fragment {
                     dataBaseFavorite.delete(ID);
                     //Toast.makeText(getContext(),"Removida das favoritas!",Toast.LENGTH_LONG).show();
                     buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_border_24, main.getTheme()));
-
-                    animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
-                    buttonFavorite.startAnimation(animationOutIn);
-                    return;
+                }else{
+                    dataBaseFavorite.insert(URI, filename, artist, title, art);
+                    //Toast.makeText(getContext(),"Salva nas favoritas!",Toast.LENGTH_LONG).show();
+                    buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_24, main.getTheme()));
                 }
 
-                dataBaseFavorite.insert(URI, filename, artist, title, art);
-                //Toast.makeText(getContext(),"Salva nas favoritas!",Toast.LENGTH_LONG).show();
-                buttonFavorite.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_24, main.getTheme()));
+                switch (listType){
+                    case 3:
+                        if(externalMusicListAdapter == null)return;
+                        externalMusicListAdapter.notifyItemChanged(position);
+                        break;
+                    case 5:
+                        if(currentMusicListAdapter == null)return;
+                        currentMusicListAdapter.notifyItemChanged(position);
+                        break;
+                }
 
                 animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.heart_beat);
                 buttonFavorite.startAnimation(animationOutIn);
@@ -601,8 +610,16 @@ public class ListFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
             if (downloadID == id) {
-                if(externalMusicListAdapter == null)return;
-                externalMusicListAdapter.notifyDataSetChanged();
+                switch (listType){
+                    case 3:
+                        if(externalMusicListAdapter == null)return;
+                        externalMusicListAdapter.notifyDataSetChanged();
+                        break;
+                    case 5:
+                        if(currentMusicListAdapter == null)return;
+                        currentMusicListAdapter.notifyDataSetChanged();
+                        break;
+                }
             }
         }
     };
