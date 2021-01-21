@@ -120,7 +120,7 @@ public class PlayerFragment extends Fragment {
         setCurrentPositionOnList();
 
         if(!PlayerService.isSetMusic()) {
-            PlayerService.setMusic(PlayerService.getFileInformation());
+            PlayerService.setMusic(PlayerService.getFileInformation(), false);
         }
 
         setButtons();
@@ -205,13 +205,14 @@ public class PlayerFragment extends Fragment {
             animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
             buttonNext.startAnimation(animationOutIn);
 
-            if(currentPositionOnList >= currentList.size()-1){
+            /*if(currentPositionOnList >= currentList.size()-1){
                 currentPositionOnList = 0;
             }else{
                 currentPositionOnList++;
-            }
-
-            changeMusic();
+            }*/
+            PlayerService playerService = new PlayerService();
+            playerService.newNext();
+            //changeMusic();
         });
 
         buttonPrevious.setOnClickListener(v -> {
@@ -224,13 +225,14 @@ public class PlayerFragment extends Fragment {
                 return;
             }
 
-            if (currentPositionOnList == 0) {
+            /*if (currentPositionOnList == 0) {
                 currentPositionOnList = currentList.size() - 1;
             } else {
                 currentPositionOnList--;
-            }
-
-            changeMusic();
+            }*/
+            PlayerService playerService = new PlayerService();
+            playerService.newPrevious();
+            //changeMusic();
         });
 
         buttonRepeat.setOnClickListener(v -> {
@@ -333,11 +335,11 @@ public class PlayerFragment extends Fragment {
         });
     }
 
-    private void changeMusic(){
+    /*private void changeMusic(){
         boolean isPlaying = PlayerService.isPlaying();
         if(currentList.size()==0)return;
         JsonObject jsonObject = currentList.get(currentPositionOnList).getAsJsonObject();
-        PlayerService.setMusic(jsonObject);
+        PlayerService.setMusic(jsonObject,false);
         setMusicInformation();
 
         if(isPlaying){
@@ -347,7 +349,7 @@ public class PlayerFragment extends Fragment {
 
         setFavorite();
         main.SavePreferences();
-    }
+    }*/
 
     private void getExternalMusicInfo(){
         try {
@@ -550,7 +552,7 @@ public class PlayerFragment extends Fragment {
 
         @SuppressLint("DefaultLocale")
         public void run() {
-            if(PlayerService.getFileName() != null) {
+            if(PlayerService.getFileName() != null && !PlayerService.getFileName().equals("")) {
 
                 if(PlayerService.isUpdatePlayerFragment()){
                     setMusicInformation();

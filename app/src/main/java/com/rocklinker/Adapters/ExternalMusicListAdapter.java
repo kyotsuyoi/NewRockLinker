@@ -39,7 +39,6 @@ import retrofit2.Response;
 
 public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusicListAdapter.ViewHolder> {
 
-    //private final List<File> files;
     private final Activity activity;
     private final com.rocklinker.Common.Handler Handler = new com.rocklinker.Common.Handler();
     private final int R_ID;
@@ -51,10 +50,9 @@ public class ExternalMusicListAdapter extends RecyclerView.Adapter <ExternalMusi
 
     private DataBaseFavorite dataBaseFavorite;
 
-    public ExternalMusicListAdapter(List<File> files, JsonArray jsonArray, Activity activity, int R_ID) {
+    public ExternalMusicListAdapter(JsonArray jsonArray, Activity activity, int R_ID) {
         this.jsonArray = jsonArray;
         this.filteredJsonArray = jsonArray;
-        //this.files = files;
         this.activity = activity;
         this.R_ID = R_ID;
     }

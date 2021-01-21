@@ -1,5 +1,6 @@
 package com.rocklinker;
 
+import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -13,9 +14,11 @@ import android.os.IBinder;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.rocklinker.DAO.DataBaseCurrentList;
 import com.rocklinker.Services.HeadphoneButtonService;
 import com.rocklinker.Services.HeadphonePlugService;
 import com.rocklinker.Services.PlayerService;
+import com.rocklinker.UI.Player.PlayerFragment;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
@@ -28,7 +31,7 @@ import java.util.Objects;
 public class MainActivity extends AppCompatActivity {
 
     private int R_ID = R.id.nav_view;
-    private static final String PREFERENCES = "MYROCKLINKER_PREFERENCES";
+    public static final String PREFERENCES = "MYROCKLINKER_PREFERENCES";
     private final com.rocklinker.Common.Handler Handler = new com.rocklinker.Common.Handler();
 
     @Override
@@ -44,8 +47,8 @@ public class MainActivity extends AppCompatActivity {
             // Passing each menu ID as a set of Ids because each
             // menu should be considered as top level destinations.
             AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                    R.id.navigation_home,
                     R.id.navigation_player,
+                    R.id.navigation_home,
                     R.id.navigation_notifications
             ).build();
 
@@ -60,6 +63,10 @@ public class MainActivity extends AppCompatActivity {
 
                 final Context applicationContext = this.getApplicationContext();
                 Intent intent = new Intent(this, PlayerService.class);
+
+                DataBaseCurrentList dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
+                dataBaseCurrentList.createTable();
+                PlayerService.setCursor(dataBaseCurrentList.getData());
 
                 applicationContext.bindService(intent, new ServiceConnection() {
                     @Override
@@ -121,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
             if(jsonString.equals(""))return;
             JsonObject jsonObject = (JsonObject) parser.parse(jsonString);
 
-            PlayerService.setMusic(jsonObject);
+            PlayerService.setMusic(jsonObject, false);
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","MainActivity.LoadPreferences: " + e.getMessage(), this, R_ID);
         }

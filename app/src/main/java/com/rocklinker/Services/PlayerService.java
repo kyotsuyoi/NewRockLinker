@@ -12,7 +12,10 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -26,12 +29,14 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.rocklinker.Common.ApiClient;
 import com.rocklinker.Common.PlayerNotification;
 import com.rocklinker.DAO.DataBaseCurrentList;
 import com.rocklinker.MainActivity;
 import com.rocklinker.R;
 import com.rocklinker.UI.Player.PlayerFragment;
 
+import java.io.File;
 import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +59,8 @@ public class PlayerService extends Service {
 
     private final MusicBinder musicBind = new MusicBinder();
 
+    private static Cursor cursor;
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -63,7 +70,7 @@ public class PlayerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return (START_NOT_STICKY);
+        return (START_STICKY);
     }
 
     @Override
@@ -82,10 +89,30 @@ public class PlayerService extends Service {
         mediaPlayer.release();
     }
 
-    public static void setMusic(JsonObject fileInformation){
+    public static void setMusic(JsonObject fileInformation, boolean innerSet){
         try {
             PlayerService.fileInformation = fileInformation;
-            String CompleteURI = fileInformation.get("uri").getAsString()+PlayerService.getFileName();
+            if(fileInformation == null || fileInformation.equals(""))return;
+            //String CompleteURI = fileInformation.get("uri").getAsString()+PlayerService.getFileName();
+            String CompleteURI = ApiClient.BASE_URL+"songs/"+PlayerService.getFileName();
+
+            String path = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getPath();
+            File file = new File(path, PlayerService.getFileName());
+
+            if(file.exists()){
+                CompleteURI = path+"/"+PlayerService.getFileName();
+            }else{
+                if(!isOnline()){
+                    return;
+                }
+            }
+
+            if(!innerSet) {
+                setCurrentPositionOnCursor();
+            }
+
+            PlayerNotification.createNotification(context);
+
             if(mediaPlayer!=null){
                 mediaPlayer.release();
             }
@@ -221,32 +248,72 @@ public class PlayerService extends Service {
         return setMusic;
     }
 
-    private JsonArray getCurrentPositionOnList(){
+    public static void setCursor(Cursor cursor){
+        PlayerService.cursor = cursor;
+    }
 
-        //Precisa de uma forma que seja carregado quando houver mudança na lista
-        //Por enquanto carrega sempre que troca de música
-        DataBaseCurrentList dataBaseCurrentList;
-
-        dataBaseCurrentList = new DataBaseCurrentList(getApplicationContext());
-        Cursor cursor = dataBaseCurrentList.getData();
-
-        JsonArray currentList = new JsonArray();
+    public static void setCurrentPositionOnCursor(){
         if (cursor != null) {
             cursor.moveToFirst();
             while (!cursor.isAfterLast()) {
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.addProperty("id", cursor.getString(0));
-                jsonObject.addProperty("uri", cursor.getString(1));
-                jsonObject.addProperty("filename", cursor.getString(2));
-                jsonObject.addProperty("artist", cursor.getString(3));
-                jsonObject.addProperty("title", cursor.getString(4));
+                String fileName = cursor.getString(2);
 
-                currentList.add(jsonObject);
+                if(fileName.equals(fileInformation.get("filename").getAsString())){
+                    return;
+                }
+
                 cursor.moveToNext();
             }
         }
+    }
 
-        return currentList;
+    public void newNext(){
+        if(cursor == null)return;
+        cursor.moveToNext();
+        if(cursor.isAfterLast()){
+            cursor.moveToFirst();
+        }
+        changeMusic();
+    }
+
+    public void newPrevious(){
+        if(cursor == null)return;
+        cursor.moveToPrevious();
+        if(cursor.isBeforeFirst()){
+            cursor.moveToLast();
+        }
+        changeMusic();
+    }
+
+    private void changeMusic(){
+        JsonObject jsonObject = new JsonObject();
+        try {
+            jsonObject.addProperty("id", cursor.getString(0));
+            jsonObject.addProperty("uri", cursor.getString(1));
+            jsonObject.addProperty("filename", cursor.getString(2));
+            jsonObject.addProperty("artist", cursor.getString(3));
+            jsonObject.addProperty("title", cursor.getString(4));
+
+            boolean isPlaying = mediaPlayer.isPlaying();
+            setMusic(jsonObject, true);
+            if (isPlaying) {
+                mediaPlayer.start();
+            }
+
+            PlayerService.updatePlayerFragment = true;
+            updateListFragment = true;
+
+            //Save current music
+            String PREFERENCES = "MYROCKLINKER_PREFERENCES";
+            SharedPreferences settings = context.getSharedPreferences(PREFERENCES, 0);
+            SharedPreferences.Editor editor = settings.edit();
+            if (PlayerService.getFileInformation() != null) {
+                editor.putString("fileInformation", PlayerService.getFileInformation().toString());
+            }
+            editor.apply();
+        }catch (Exception e){
+            Log.e("Error on PlayerService.changeMusic", e.getMessage());
+        }
     }
 
     private final Runnable UpdateSongTime = new Runnable() {
@@ -272,7 +339,8 @@ public class PlayerService extends Service {
                                 break;
                             case "A":
                                 if (mediaPlayer.getCurrentPosition() >= mediaPlayer.getDuration() - 1000) {
-                                    next();
+                                    Log.i("MediaPlayer", ">>>>> Trying NEXT <<<<<");
+                                    newNext();
                                 }
                                 break;
                         }
@@ -286,87 +354,11 @@ public class PlayerService extends Service {
                 Log.e("ERROR (PlayerService.Runnable.run())",e.getMessage());
             }
 
+            Log.i("PlayerService",">>>>> IS RUNNING <<<<<");
+
             myHandler.postDelayed(this, 100);
         }
     };
-
-    //Requer refatoração de previous e next (verificar também com next de PlayerFragment)
-    private void next(){
-
-        //Precisa de uma forma que seja carregado quando houver mudança na lista
-        //Por enquanto carrega sempre que troca de música
-        JsonArray currentList = getCurrentPositionOnList();
-
-        int currentPositionOnList = 0;
-
-        for (int i = 0; i < currentList.size(); i++) {
-            String fileName = currentList.get(i).getAsJsonObject().get("filename").getAsString();
-            if (fileName.equals(PlayerService.getFileName())) {
-                currentPositionOnList = i;
-            }
-        }
-
-        if (currentPositionOnList >= currentList.size() - 1) {
-            currentPositionOnList = 0;
-        } else {
-            currentPositionOnList++;
-        }
-
-        PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
-        play();
-
-        PlayerService.updatePlayerFragment = true;
-
-        //Save current music
-        String PREFERENCES = "MYROCKLINKER_PREFERENCES";
-        SharedPreferences settings = getSharedPreferences(PREFERENCES, 0);
-        SharedPreferences.Editor editor = settings.edit();
-        if(PlayerService.getFileInformation()!=null){
-            editor.putString("fileInformation", PlayerService.getFileInformation().toString());
-        }
-        editor.apply();
-
-        updateListFragment = true;
-    }
-
-    //Requer refatoração de previous e next (verificar também com previous de PlayerFragment)
-    private void previous(){
-
-        //Precisa de uma forma que seja carregado quando houver mudança na lista
-        //Por enquanto carrega sempre que troca de música
-        JsonArray currentList = getCurrentPositionOnList();
-
-        int currentPositionOnList = 0;
-
-        for (int i = 0; i < currentList.size(); i++) {
-            String fileName = currentList.get(i).getAsJsonObject().get("filename").getAsString();
-            if (fileName.equals(PlayerService.getFileName())) {
-                currentPositionOnList = i;
-            }
-        }
-
-        if (currentPositionOnList == 0) {
-            currentPositionOnList = currentList.size() - 1;
-        } else {
-            currentPositionOnList--;
-        }
-
-        PlayerService.setMusic(currentList.get(currentPositionOnList).getAsJsonObject());
-        play();
-
-        PlayerService.updatePlayerFragment = true;
-
-        //Save current music
-        String PREFERENCES = "MYROCKLINKER_PREFERENCES";
-        SharedPreferences settings = getSharedPreferences(PREFERENCES, 0);
-        SharedPreferences.Editor editor = settings.edit();
-        if(PlayerService.getFileInformation()!=null){
-            editor.putString("fileInformation", PlayerService.getFileInformation().toString());
-        }
-        editor.apply();
-
-        updateListFragment = true;
-    }
 
     public static boolean isUpdateListFragment(){
         if(updateListFragment){
@@ -390,11 +382,11 @@ public class PlayerService extends Service {
                     updatePlayerFragment = true;
                     break;
                 case "previous":
-                    previous();
+                    newPrevious();
                     updatePlayerFragment = true;
                     break;
                 case "next":
-                    next();
+                    newNext();
                     updatePlayerFragment = true;
                     break;
             }
@@ -418,6 +410,12 @@ public class PlayerService extends Service {
             registerReceiver(broadcastReceiver, new IntentFilter("broadcastAction"));
             startService(new Intent(getBaseContext(), OnClearFormRecentService.class));
         }
+    }
+
+    public static boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
 }

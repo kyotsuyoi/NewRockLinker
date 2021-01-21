@@ -58,7 +58,7 @@ public class DataBaseCurrentList extends SQLiteOpenHelper {
 
     public Cursor getData(){
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res = db.rawQuery("SELECT * FROM "+TABLE_NAME+" ORDER BY id DESC", null);
+        Cursor res = db.rawQuery("SELECT * FROM "+TABLE_NAME+" ORDER BY id", null);
         return res;
     }
 

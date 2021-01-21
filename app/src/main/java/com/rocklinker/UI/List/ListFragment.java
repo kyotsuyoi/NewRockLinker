@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -118,7 +119,7 @@ public class ListFragment extends Fragment {
             main = (MainActivity) getActivity();
             assert main != null;
             path = Objects.requireNonNull(main.getExternalFilesDir(Environment.DIRECTORY_MUSIC)).getPath();
-            getInternalMusicList();
+            //getInternalMusicList();
             setRecyclerView();
             setSearchView();
             //getExternalArtistList();
@@ -225,18 +226,21 @@ public class ListFragment extends Fragment {
                                 newJsonObject.addProperty("artist", artist);
                                 newJsonObject.addProperty("uri",URI);
 
-                                PlayerService.setMusic(newJsonObject);
-                                playerService.play();
-                                main.SavePreferences();
+                                PlayerService.setMusic(newJsonObject, false);
+                                SavePreferences();
 
                                 if(currentPlayingType != 3) {
                                     dataBaseCurrentList.dropTable();
                                     dataBaseCurrentList.createTable();
                                     insertCurrentList(URI, externalMusicListAdapter.getItems());
                                     currentPlayingType=3;
+                                    PlayerService.setCursor(dataBaseCurrentList.getData());
                                 }
 
                                 externalMusicListAdapter.notifyDataSetChanged();
+
+                                playerService.play();
+
                                 break;
                             case 4:
                                 listType = 3;
@@ -250,27 +254,21 @@ public class ListFragment extends Fragment {
                                 if (currentMusicListAdapter == null) return;
                                 JsonObject jsonObject = currentMusicListAdapter.getItem(position);
 
-                                String path = main.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getPath();
-                                File file = new File(path, jsonObject.get("filename").getAsString());
-
-                                if(file.exists()){
-                                    jsonObject.addProperty("uri",path+"/");
-                                }else{
-                                    jsonObject.addProperty("uri",ApiClient.BASE_URL+"songs/");
-                                }
-
-                                PlayerService.setMusic(jsonObject);
-                                playerService.play();
-                                main.SavePreferences();
+                                PlayerService.setMusic(jsonObject, false);
+                                SavePreferences();
 
                                 if(currentPlayingType != 5) {
                                     dataBaseCurrentList.dropTable();
                                     dataBaseCurrentList.createTable();
                                     insertCurrentList(URI, currentMusicListAdapter.getItems());
                                     currentPlayingType=5;
+                                    PlayerService.setCursor(dataBaseCurrentList.getData());
                                 }
 
                                 currentMusicListAdapter.notifyDataSetChanged();
+
+                                playerService.play();
+
                                 break;
                         }
                     }catch (Exception e){
@@ -347,7 +345,7 @@ public class ListFragment extends Fragment {
         });
     }
 
-    private void getInternalMusicList(){
+    private void _getInternalMusicList(){
         try {
             File dir = new File(path);
             File[] fileList = dir.listFiles();
@@ -414,8 +412,7 @@ public class ListFragment extends Fragment {
                             assert jsonObject != null;
                             JsonArray data = jsonObject.get("data").getAsJsonArray();
 
-                            externalMusicListAdapter = new ExternalMusicListAdapter(
-                                    internalMusicListAdapter.getFiles(), data, main, R_ID);
+                            externalMusicListAdapter = new ExternalMusicListAdapter(data, main, R_ID);
                             recyclerView.setAdapter(externalMusicListAdapter);
                         }
                     }catch (Exception e){
@@ -590,6 +587,18 @@ public class ListFragment extends Fragment {
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","ListFragment.DialogMusicMenu: " + e.getMessage(), main, R_ID);
         }
+    }
+
+    public void SavePreferences(){
+        SharedPreferences settings = main.getSharedPreferences(main.PREFERENCES, 0);
+        SharedPreferences.Editor editor = settings.edit();
+
+        editor.putBoolean("shuffle", PlayerService.isShuffle());
+        editor.putString("repeat", PlayerService.getRepeat());
+        if(PlayerService.getFileInformation()!=null){
+            editor.putString("fileInformation", PlayerService.getFileInformation().toString());
+        }
+        editor.apply();
     }
 
     private final Runnable UpdateCurrentTrack = new Runnable() {
