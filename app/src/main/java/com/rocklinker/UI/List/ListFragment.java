@@ -70,13 +70,13 @@ public class ListFragment extends Fragment {
     private final PlayerInterface musicListInterface = ApiClient.getApiClient().create(PlayerInterface.class);
     private RecyclerView recyclerView;
 
-    private Button buttonExternalArtist, buttonCurrentList, buttonFavorites, buttonBack;
+    private Button buttonExternalArtist, buttonCurrentList , buttonInternalMusic, buttonFavorites, buttonBack;
 
     private SearchView searchView;
 
     private ExternalArtistListAdapter externalArtistListAdapter;
     private ExternalMusicListAdapter externalMusicListAdapter;
-    private InternalMusicListAdapter internalMusicListAdapter;
+    //private InternalMusicListAdapter internalMusicListAdapter;
     private CurrentMusicListAdapter currentMusicListAdapter;
 
     private int listType = 5;
@@ -108,6 +108,7 @@ public class ListFragment extends Fragment {
 
         buttonExternalArtist = root.findViewById(R.id.fragmentList_Button_Artist);
         buttonCurrentList = root.findViewById(R.id.fragmentList_Button_CurrentList);
+        buttonInternalMusic = root.findViewById(R.id.fragmentList_Button_InternalMusic);
         buttonFavorites = root.findViewById(R.id.fragmentList_Button_Favorites);
         buttonBack = root.findViewById(R.id.fragmentList_Button_Back);
 
@@ -170,9 +171,16 @@ public class ListFragment extends Fragment {
         buttonCurrentList.setOnClickListener(v -> {
             loadCurrentList(false);
             listType = 5;
-
             animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
             buttonCurrentList.startAnimation(animationOutIn);
+        });
+
+        buttonInternalMusic.setOnClickListener(v -> {
+            getInternalMusicList();
+            listType = 1;
+
+            animationOutIn = AnimationUtils.loadAnimation(main.getApplicationContext(),R.anim.zoom_out_in);
+            buttonInternalMusic.startAnimation(animationOutIn);
         });
 
         buttonFavorites.setOnClickListener(v -> {
@@ -345,7 +353,7 @@ public class ListFragment extends Fragment {
         });
     }
 
-    private void _getInternalMusicList(){
+    private void getInternalMusicList(){
         try {
             File dir = new File(path);
             File[] fileList = dir.listFiles();
@@ -355,8 +363,16 @@ public class ListFragment extends Fragment {
             assert fileList != null;
             Collections.addAll(files, fileList);
 
-            internalMusicListAdapter = new InternalMusicListAdapter(files, main, R_ID);
+            JsonArray jsonArray = new JsonArray();
 
+            for(File file : files){
+                JsonObject jsonObject = new JsonObject();
+                jsonObject.addProperty("filename", file.getName());
+                jsonArray.add(jsonObject);
+            }
+
+            currentMusicListAdapter = new CurrentMusicListAdapter(jsonArray, main, R_ID);
+            recyclerView.setAdapter(currentMusicListAdapter);
             Collections.sort(files);
         }catch (Exception e){
             Handler.ShowSnack("Houve um erro","ListFragment.getInternalMusicList: " + e.getMessage(), main, R_ID);
@@ -605,6 +621,11 @@ public class ListFragment extends Fragment {
 
         @SuppressLint("DefaultLocale")
         public void run() {
+            String error = PlayerService.getError();
+            if(!error.equals("")){
+                Handler.ShowSnack(error,null, main, R_ID);
+            }
+
             if(PlayerService.getFileName() != null) {
                 if(PlayerService.isUpdateListFragment()) {
                     currentMusicListAdapter.notifyDataSetChanged();

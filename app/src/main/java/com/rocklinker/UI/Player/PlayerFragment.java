@@ -290,7 +290,10 @@ public class PlayerFragment extends Fragment {
             String filename = jsonObject.get("filename").getAsString();
             String artist = jsonObject.get("artist").getAsString();
             String title = jsonObject.get("title").getAsString();
-            String art = jsonObject.get("art").getAsString();
+            String art = "";
+            if(jsonObject.has("art")) {
+                art = jsonObject.get("art").getAsString();
+            }
 
             int ID = dataBaseFavorite.getID(filename);
             if(ID != 0){
@@ -552,6 +555,11 @@ public class PlayerFragment extends Fragment {
 
         @SuppressLint("DefaultLocale")
         public void run() {
+            String error = PlayerService.getError();
+            if(!error.equals("")){
+                Handler.ShowSnack(error,null, main, R_ID);
+            }
+
             if(PlayerService.getFileName() != null && !PlayerService.getFileName().equals("")) {
 
                 if(PlayerService.isUpdatePlayerFragment()){

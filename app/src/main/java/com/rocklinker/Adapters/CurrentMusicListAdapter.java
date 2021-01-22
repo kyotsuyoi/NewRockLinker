@@ -146,6 +146,7 @@ public class CurrentMusicListAdapter extends RecyclerView.Adapter <CurrentMusicL
     }
 
     public JsonObject getItem(int position){
+        if(position < 0 || position > filteredJsonArray.size()) return null;
         return filteredJsonArray.get(position).getAsJsonObject();
     }
 

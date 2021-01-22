@@ -36,7 +36,10 @@ import com.rocklinker.MainActivity;
 import com.rocklinker.R;
 import com.rocklinker.UI.Player.PlayerFragment;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +58,8 @@ public class PlayerService extends Service {
     private static boolean created = false;
     private static boolean setMusic = false;
 
-    private static long cur = 0;//To refresh 'currentTime' during 'play()';
+    private static long cur = 0;//To refresh 'currentTime' during 'play() (Play/Pause)';
+    private static String errorMessage = "";
 
     private final MusicBinder musicBind = new MusicBinder();
 
@@ -92,7 +96,7 @@ public class PlayerService extends Service {
     public static void setMusic(JsonObject fileInformation, boolean innerSet){
         try {
             PlayerService.fileInformation = fileInformation;
-            if(fileInformation == null || fileInformation.equals(""))return;
+            if(fileInformation == null || fileInformation.get("filename").getAsString().equals(""))return;
             //String CompleteURI = fileInformation.get("uri").getAsString()+PlayerService.getFileName();
             String CompleteURI = ApiClient.BASE_URL+"songs/"+PlayerService.getFileName();
 
@@ -103,6 +107,11 @@ public class PlayerService extends Service {
                 CompleteURI = path+"/"+PlayerService.getFileName();
             }else{
                 if(!isOnline()){
+                    errorMessage = "No internet connection";
+                    return;
+                }
+                if(!isOnlineServer()){
+                    errorMessage = "No server connection ("+ ApiClient.IP +")";
                     return;
                 }
             }
@@ -416,6 +425,27 @@ public class PlayerService extends Service {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
+    public static boolean isOnlineServer() {
+        //Ping to host and return an int value of 0 or 1 or 2
+        //0 = success, 1 = fail, 2 = error
+
+        Runtime runtime = Runtime.getRuntime();
+        try {
+            Process process = runtime.exec("/system/bin/ping -c 1 -w 2 "+ ApiClient.IP);
+            int value = process.waitFor();
+            return (value == 0);
+        } catch (Exception e){
+            Log.e("Error (PlayerService.isOnlineServer)",e.getMessage());
+            return false;
+        }
+    }
+
+    public static String getError(){
+        String error = errorMessage;
+        errorMessage = "";
+        return error;
     }
 
 }
